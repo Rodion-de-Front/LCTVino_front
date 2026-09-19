@@ -1,6 +1,6 @@
 /**
- * Generates the offline-friendly artwork used across the app:
- * stylised bottle "photos", user avatars and PWA icons.
+ * Generates the artwork that is cheap to synthesise: user avatars and PWA
+ * icons. Wine bottles are real CC0 photos in public/images/wines.
  *
  *   node scripts/generate-assets.mjs
  */
@@ -16,67 +16,6 @@ const ensure = (file) => mkdirSync(dirname(file), { recursive: true })
 const write = (file, contents) => {
   ensure(file)
   writeFileSync(file, contents)
-}
-
-const PALETTES = {
-  red: { glass: ['#5C262C', '#8B3A3A'], liquid: '#722F37', back: ['#F7E9E4', '#E7CFCB'] },
-  white: { glass: ['#8E8A46', '#C2BE72'], liquid: '#E8DFA8', back: ['#FBF6E6', '#EDE7CF'] },
-  rose: { glass: ['#C4737D', '#E2A0A6'], liquid: '#EFB4B8', back: ['#FDEEF0', '#F4D8DC'] },
-  sparkling: { glass: ['#4E5A3C', '#7C8A60'], liquid: '#F0E2B0', back: ['#F6F2E4', '#E6E2CE'] },
-}
-
-/** A tall bottle silhouette rendered as an SVG "product shot". */
-function bottleSvg({ type, label, year, seed }) {
-  const p = PALETTES[type] ?? PALETTES.red
-  const tilt = ((seed % 7) - 3) * 1.1
-  const id = `b${seed}`
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 800" width="600" height="800">
-  <defs>
-    <linearGradient id="${id}bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="${p.back[0]}"/><stop offset="1" stop-color="${p.back[1]}"/>
-    </linearGradient>
-    <radialGradient id="${id}glow" cx="50%" cy="22%" r="62%">
-      <stop offset="0" stop-color="#ffffff" stop-opacity="0.95"/>
-      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
-    </radialGradient>
-    <linearGradient id="${id}glass" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="${p.glass[0]}"/>
-      <stop offset="0.42" stop-color="${p.glass[1]}"/>
-      <stop offset="0.68" stop-color="${p.glass[0]}"/>
-      <stop offset="1" stop-color="#2B1214"/>
-    </linearGradient>
-    <linearGradient id="${id}liq" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="${p.liquid}" stop-opacity="0.9"/>
-      <stop offset="1" stop-color="${p.liquid}" stop-opacity="0.45"/>
-    </linearGradient>
-    <linearGradient id="${id}label" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#FBF7F1"/><stop offset="1" stop-color="#EADFD2"/>
-    </linearGradient>
-    <filter id="${id}soft" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="18"/>
-    </filter>
-  </defs>
-
-  <rect width="600" height="800" fill="url(#${id}bg)"/>
-  <rect width="600" height="800" fill="url(#${id}glow)"/>
-  <circle cx="${120 + (seed % 5) * 60}" cy="${640 - (seed % 3) * 40}" r="150" fill="#ffffff" opacity="0.28" filter="url(#${id}soft)"/>
-
-  <g transform="translate(300 400) rotate(${tilt}) translate(-300 -400)">
-    <ellipse cx="300" cy="712" rx="128" ry="26" fill="#5C262C" opacity="0.22" filter="url(#${id}soft)"/>
-    <path d="M262 96 h76 v138 c0 34 62 72 62 154 v256 c0 34-24 56-58 56 h-84 c-34 0-58-22-58-56 V388 c0-82 62-120 62-154 z"
-          fill="url(#${id}glass)"/>
-    <path d="M262 96 h76 v40 h-76 z" fill="#2B1214" opacity="0.85"/>
-    <path d="M254 132 h92 v56 h-92 z" fill="${p.glass[0]}" opacity="0.9"/>
-    <path d="M232 470 h136 v168 c0 24-16 38-40 38 h-56 c-24 0-40-14-40-38 z" fill="url(#${id}liq)" opacity="0.55"/>
-    <rect x="216" y="418" width="168" height="196" rx="10" fill="url(#${id}label)"/>
-    <rect x="216" y="418" width="168" height="196" rx="10" fill="none" stroke="#C9A961" stroke-width="2.5" opacity="0.8"/>
-    <text x="300" y="486" text-anchor="middle" font-family="Georgia, serif" font-size="46" fill="#722F37">${label}</text>
-    <path d="M250 508 h100" stroke="#C9A961" stroke-width="2"/>
-    <text x="300" y="548" text-anchor="middle" font-family="Georgia, serif" font-size="22" fill="#6F615C" letter-spacing="3">${year}</text>
-    <text x="300" y="586" text-anchor="middle" font-family="Georgia, serif" font-size="14" fill="#9A8C86" letter-spacing="4">VINORA</text>
-    <path d="M276 150 c-14 60-26 96-26 150 v340" stroke="#ffffff" stroke-opacity="0.34" stroke-width="12" fill="none" stroke-linecap="round"/>
-  </g>
-</svg>`
 }
 
 function avatarSvg({ initials, hues, seed }) {
@@ -179,39 +118,8 @@ function iconPainter(size, maskable) {
 }
 
 // ---------------------------------------------------------------- run
-const bottles = [
-  ['cabernet', 'red', 'CS', 2019],
-  ['saperavi', 'red', 'SP', 2020],
-  ['pinot-noir', 'red', 'PN', 2021],
-  ['merlot', 'red', 'ML', 2018],
-  ['chardonnay', 'white', 'CH', 2022],
-  ['riesling', 'white', 'RS', 2021],
-  ['sauvignon', 'white', 'SB', 2022],
-  ['rkatsiteli', 'white', 'RK', 2020],
-  ['rose-provence', 'rose', 'RP', 2023],
-  ['rose-crimea', 'rose', 'RC', 2022],
-  ['prosecco', 'sparkling', 'PR', 2022],
-  ['champagne', 'sparkling', 'CM', 2017],
-]
-
-bottles.forEach(([slug, type, label, year], i) =>
-  write(out(`images/wines/${slug}.svg`), bottleSvg({ type, label, year, seed: i + 1 })),
-)
-
-const avatars = [
-  ['anna', 'АК', ['#722F37', '#C9A961']],
-  ['dmitry', 'ДС', ['#8B3A3A', '#D4A574']],
-  ['elena', 'ЕМ', ['#5C262C', '#B0666C']],
-  ['igor', 'ИВ', ['#42272B', '#8E6A4E']],
-  ['maria', 'МЛ', ['#8B3A3A', '#E0C88C']],
-  ['pavel', 'ПГ', ['#2B1214', '#722F37']],
-  ['sofia', 'СР', ['#A14A55', '#D4A574']],
-  ['guest', 'V', ['#722F37', '#C9A961']],
-]
-
-avatars.forEach(([slug, initials, hues], i) =>
-  write(out(`images/avatars/${slug}.svg`), avatarSvg({ initials, hues, seed: i + 1 })),
-)
+// Seeded users have photo avatars; this is the placeholder for fresh sign-ups.
+write(out('images/avatars/guest.svg'), avatarSvg({ initials: 'V', hues: ['#722F37', '#C9A961'], seed: 1 }))
 
 write(out('icons/icon-192.png'), encodePng(192, iconPainter(192, false)))
 write(out('icons/icon-512.png'), encodePng(512, iconPainter(512, false)))
@@ -230,4 +138,4 @@ write(
 </svg>`,
 )
 
-console.log('Generated wine bottles, avatars and PWA icons in /public.')
+console.log('Generated avatars and PWA icons in /public.')

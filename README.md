@@ -32,7 +32,7 @@ src/
   stores/       auth, feed, catalog, user, ui
   views/        экраны приложения
 scripts/
-  generate-assets.mjs   генерирует SVG-бутылки, аватары и PNG-иконки в /public
+  generate-assets.mjs   генерирует аватары и PNG-иконки в /public
 ```
 
 ## Один service worker на две задачи
@@ -67,7 +67,7 @@ MSW и Workbox оба претендуют на корневой scope, а бр�
 | GET POST | `/api/posts` |
 | POST | `/api/posts/:id/like`, `/api/posts/:id/save`, `/api/posts/:id/comments` |
 | DELETE | `/api/posts/:id/comments/:commentId` |
-| GET | `/api/wines`, `/api/wines/:id`, `/api/wines/:id/reviews` |
+| GET | `/api/wines`, `/api/wines/facets`, `/api/wines/:id`, `/api/wines/:id/reviews` |
 | POST | `/api/wines/:id/reviews` |
 | POST | `/api/scan/label`, `/api/scan/qr` |
 | GET PATCH | `/api/users/me` |
@@ -79,13 +79,31 @@ MSW и Workbox оба претендуют на корневой scope, а бр�
 Сканер открывает камеру через `useUserMedia` и возвращает случайное вино из базы —
 распознавания этикеток нет по условию задачи.
 
-Сбросить моки к исходному состоянию: `localStorage.removeItem('vinora:db:v1')`.
+Каждое вино описано цветом (`red | white | rose | orange`) и категорией
+(`still | sparkling | fortified`) — это независимые оси, поэтому розовое может
+быть и тихим, и игристым. `/api/wines/facets` отдаёт списки регионов, сортов,
+производителей и гастросочетаний для фильтров каталога, чтобы они не были
+зашиты в UI.
+
+Сбросить моки к исходному состоянию: `localStorage.removeItem('vinora:db:v3')`.
 
 ## Картинки
 
-Фотографий вина нет, поэтому `scripts/generate-assets.mjs` рисует стилизованные
-SVG-бутылки, аватары и PNG-иконки PWA (минимальный энкодер PNG на `zlib`).
-Ассеты лежат в `public/` и закоммичены; перегенерировать — `node scripts/generate-assets.mjs`.
+Бутылки — настоящие фотографии под лицензией CC0 (StockSnap и Rawpixel, найдены
+через Openverse). Каждое вино лежит в `public/images/wines/` в двух кадрах:
+`<slug>.webp` — портрет 900×1200 для карточек каталога, погреба и шапки страницы
+вина, `<slug>-wide.webp` — 1200×900 для постов в ленте. Так ни один экран не
+режет бутылку по краю. Источник каждого снимка записан в
+`scripts/wine-photo-credits.json`. Все 24 файла весят ~1,9 МБ и попадают в
+precache, чтобы каталог не пустовал офлайн.
+
+Аватары семи демо-пользователей — тоже CC0-портреты, кадрированные по лицу до
+квадрата 256×256 (`scripts/avatar-photo-credits.json`). У новых регистраций
+фото нет, им достаётся нарисованная заглушка `guest.svg`.
+
+Заглушку и PNG-иконки PWA генерирует `scripts/generate-assets.mjs` (минимальный
+энкодер PNG на `zlib`). Ассеты закоммичены; перегенерировать —
+`node scripts/generate-assets.mjs`.
 
 ## Анимации
 

@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { computed, ref } from 'vue'
+import { computed, ref, shallowRef, type Ref } from 'vue'
 import { feedApi } from '@/api'
 import { errorMessage } from '@/api/client'
 import type { Post } from '@/types'
@@ -17,8 +17,26 @@ export const useFeedStore = defineStore('feed', () => {
   const refreshing = ref(false)
   const error = ref<string | null>(null)
 
+  // A post can be on screen in more than one list — the feed and a profile,
+  // for instance. Views register their list so a like reaches every copy.
+  const mirrors = shallowRef<Ref<Post[]>[]>([])
+
+  function trackPosts(list: Ref<Post[]>) {
+    mirrors.value = [...mirrors.value, list]
+    return () => {
+      mirrors.value = mirrors.value.filter((other) => other !== list)
+    }
+  }
+
+  function copiesOf(postId: string | null) {
+    if (!postId) return []
+    return [posts, ...mirrors.value]
+      .map((list) => list.value.find((p) => p.id === postId))
+      .filter((p): p is Post => Boolean(p))
+  }
+
   const activePostId = ref<string | null>(null)
-  const activePost = computed(() => posts.value.find((p) => p.id === activePostId.value) ?? null)
+  const activePost = computed(() => copiesOf(activePostId.value)[0] ?? null)
 
   async function loadFeed({ refresh = false } = {}) {
     if (loading.value) return
@@ -54,46 +72,54 @@ export const useFeedStore = defineStore('feed', () => {
   }
 
   async function likePost(postId: string) {
-    const post = posts.value.find((p) => p.id === postId)
-    if (!post) return
+    const copies = copiesOf(postId)
+    if (!copies.length) return
     // Optimistic: the heart animation must not wait for the round-trip.
-    const previous = { likes: post.likes, likedByMe: post.likedByMe }
-    post.likedByMe = !post.likedByMe
-    post.likes += post.likedByMe ? 1 : -1
-    ui.haptic(post.likedByMe ? [8, 24, 12] : 8)
+    const previous = { likes: copies[0].likes, likedByMe: copies[0].likedByMe }
+    const liked = !previous.likedByMe
+    copies.forEach((post) => {
+      post.likedByMe = liked
+      post.likes = previous.likes + (liked ? 1 : -1)
+    })
+    ui.haptic(liked ? [8, 24, 12] : 8)
     try {
       const data = await feedApi.like(postId)
-      post.likes = data.likes
-      post.likedByMe = data.likedByMe
+      copies.forEach((post) => {
+        post.likes = data.likes
+        post.likedByMe = data.likedByMe
+      })
     } catch {
-      Object.assign(post, previous)
+      copies.forEach((post) => Object.assign(post, previous))
       ui.notify({ type: 'error', title: 'Лайк не сохранился' })
     }
   }
 
   async function toggleSave(postId: string) {
-    const post = posts.value.find((p) => p.id === postId)
-    if (!post) return
-    post.savedByMe = !post.savedByMe
+    const copies = copiesOf(postId)
+    if (!copies.length) return
+    const saved = !copies[0].savedByMe
+    copies.forEach((post) => (post.savedByMe = saved))
     try {
       const data = await feedApi.save(postId)
-      post.savedByMe = data.savedByMe
+      copies.forEach((post) => (post.savedByMe = data.savedByMe))
       ui.notify({
         type: 'success',
         title: data.savedByMe ? 'Сохранено' : 'Удалено из сохранённых',
       })
     } catch {
-      post.savedByMe = !post.savedByMe
+      copies.forEach((post) => (post.savedByMe = !saved))
     }
   }
 
   async function addComment(postId: string, text: string) {
-    const post = posts.value.find((p) => p.id === postId)
-    if (!post || !text.trim()) return
+    const copies = copiesOf(postId)
+    if (!copies.length || !text.trim()) return
     try {
       const comment = await feedApi.comment(postId, text.trim())
-      post.comments.push(comment)
-      post.commentsCount = post.comments.length
+      copies.forEach((post) => {
+        post.comments.push(comment)
+        post.commentsCount = post.comments.length
+      })
     } catch (e) {
       ui.notify({ type: 'error', title: errorMessage(e, 'Комментарий не отправлен') })
     }
@@ -132,6 +158,7 @@ export const useFeedStore = defineStore('feed', () => {
     activePostId,
     loadFeed,
     loadMore,
+    trackPosts,
     likePost,
     toggleSave,
     addComment,

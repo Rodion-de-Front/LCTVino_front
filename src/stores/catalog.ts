@@ -2,24 +2,28 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { catalogApi, type WineDetail } from '@/api'
 import { errorMessage } from '@/api/client'
-import type { CatalogFilters, Wine } from '@/types'
+import type { CatalogFacets, CatalogFilters, Wine } from '@/types'
 
-export const REGIONS = ['Крым', 'Краснодарский край', 'Франция', 'Италия'] as const
 export const MAX_PRICE = 7000
 
-const emptyFilters = (): CatalogFilters => ({
+export const defaultFilters = (): CatalogFilters => ({
   query: '',
-  types: [],
+  colors: [],
+  categories: [],
   sweetness: [],
   regions: [],
+  grapes: [],
+  producers: [],
+  pairings: [],
   minRating: 0,
+  awardedOnly: false,
   maxPrice: MAX_PRICE,
   sort: 'rating',
 })
 
 export const useCatalogStore = defineStore('catalog', () => {
   const wines = ref<Wine[]>([])
-  const filters = ref<CatalogFilters>(emptyFilters())
+  const filters = ref<CatalogFilters>(defaultFilters())
   const loading = ref(false)
   const loadingMore = ref(false)
   const hasMore = ref(false)
@@ -31,16 +35,32 @@ export const useCatalogStore = defineStore('catalog', () => {
   const currentWine = ref<WineDetail | null>(null)
   const detailLoading = ref(false)
 
+  const facets = ref<CatalogFacets>({ regions: [], grapes: [], producers: [], pairings: [] })
+
   const activeFilterCount = computed(() => {
     const f = filters.value
     return (
-      f.types.length +
+      f.colors.length +
+      f.categories.length +
       f.sweetness.length +
       f.regions.length +
+      f.grapes.length +
+      f.producers.length +
+      f.pairings.length +
       (f.minRating > 0 ? 1 : 0) +
+      (f.awardedOnly ? 1 : 0) +
       (f.maxPrice < MAX_PRICE ? 1 : 0)
     )
   })
+
+  async function loadFacets() {
+    if (facets.value.regions.length) return
+    try {
+      facets.value = await catalogApi.facets()
+    } catch {
+      /* filters stay usable with whatever is already loaded */
+    }
+  }
 
   async function searchWines({ reset = true } = {}) {
     loading.value = reset
@@ -96,7 +116,7 @@ export const useCatalogStore = defineStore('catalog', () => {
   }
 
   function resetFilters() {
-    filters.value = emptyFilters()
+    filters.value = defaultFilters()
   }
 
   function toggleIn<T>(list: T[], value: T) {
@@ -115,7 +135,9 @@ export const useCatalogStore = defineStore('catalog', () => {
     error,
     currentWine,
     detailLoading,
+    facets,
     activeFilterCount,
+    loadFacets,
     searchWines,
     loadMore,
     loadWine,

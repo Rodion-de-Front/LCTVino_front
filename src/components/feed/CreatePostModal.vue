@@ -6,6 +6,7 @@ import GlassField from '@/components/ui/GlassField.vue'
 import LazyImage from '@/components/ui/LazyImage.vue'
 import StarRating from '@/components/ui/StarRating.vue'
 import { catalogApi } from '@/api'
+import { defaultFilters } from '@/stores/catalog'
 import { useFeedStore } from '@/stores/feed'
 import { useUiStore } from '@/stores/ui'
 import type { Wine } from '@/types'
@@ -28,11 +29,7 @@ const tags = ref('')
 const posting = ref(false)
 
 onMounted(async () => {
-  const data = await catalogApi.search(
-    { query: '', types: [], sweetness: [], regions: [], minRating: 0, maxPrice: Infinity, sort: 'rating' },
-    1,
-    12,
-  )
+  const data = await catalogApi.search(defaultFilters(), 1, 12)
   wines.value = data.items
 })
 

@@ -26,6 +26,7 @@ const QUESTIONS: Question[] = [
       { value: 'red', label: 'Красное', emoji: '🍷' },
       { value: 'white', label: 'Белое', emoji: '🥂' },
       { value: 'rose', label: 'Розовое', emoji: '🌸' },
+      { value: 'orange', label: 'Оранжевое', emoji: '🍑' },
       { value: 'sparkling', label: 'Игристое', emoji: '🫧' },
       { value: 'unknown', label: 'Пока не знаю', emoji: '🤷' },
     ],

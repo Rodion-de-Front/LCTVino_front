@@ -11,13 +11,22 @@ const emit = defineEmits<{ open: [Wine]; favorite: [Wine] }>()
 
 const { style, glare, onMove, onLeave } = useTilt(8)
 
-const TYPE_LABELS: Record<string, string> = {
+const COLOR_LABELS: Record<string, string> = {
   red: 'Красное',
   white: 'Белое',
   rose: 'Розовое',
-  sparkling: 'Игристое',
+  orange: 'Оранжевое',
 }
-const typeLabel = computed(() => TYPE_LABELS[props.wine.type] ?? props.wine.type)
+const CATEGORY_LABELS: Record<string, string> = {
+  sparkling: 'Игристое',
+  fortified: 'Креплёное',
+}
+
+// Still wines are the default, so the badge only spells out the colour;
+// sparkling and fortified are the more useful thing to surface.
+const typeLabel = computed(
+  () => CATEGORY_LABELS[props.wine.category] ?? COLOR_LABELS[props.wine.color] ?? props.wine.color,
+)
 const price = computed(() => `${props.wine.price.toLocaleString('ru-RU')} ₽`)
 </script>
 
@@ -70,9 +79,11 @@ const price = computed(() => `${props.wine.price.toLocaleString('ru-RU')} ₽`)
     <div class="relative mt-2.5 px-1 pb-1">
       <h3 class="truncate text-footnote font-semibold text-ink">{{ wine.name }}</h3>
       <p class="truncate text-caption text-ink-muted">{{ wine.producer }} · {{ wine.region }}</p>
-      <div class="mt-2 flex items-center justify-between gap-2">
+      <!-- Stars and price share a line when the card is wide enough,
+           otherwise the price drops below instead of being clipped. -->
+      <div class="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
         <StarRating :model-value="wine.rating" :size="12" show-value />
-        <span class="shrink-0 whitespace-nowrap text-footnote font-semibold text-wine-600">
+        <span class="ml-auto whitespace-nowrap text-footnote font-semibold text-wine-600">
           {{ price }}
         </span>
       </div>

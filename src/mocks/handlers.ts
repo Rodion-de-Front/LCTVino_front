@@ -44,6 +44,9 @@ function paginate<T>(items: T[], page: number, perPage: number): Paginated<T> {
   }
 }
 
+// Wine artwork ships as a portrait card crop plus a landscape twin for the feed.
+const wideCrop = (src: string | undefined) => src?.replace(/\.webp$/, '-wide.webp')
+
 const num = (v: string | null, fallback: number) => {
   const n = Number(v)
   return Number.isFinite(n) && v !== null && v !== '' ? n : fallback
@@ -157,7 +160,7 @@ export const handlers = [
       author: userBrief(userId),
       wineId: body.wineId,
       wineName: wine?.name ?? 'Неизвестное вино',
-      image: body.image || wine?.image || '/images/wines/cabernet.svg',
+      image: body.image || wideCrop(wine?.image) || '/images/wines/cabernet-wide.webp',
       text: body.text,
       rating: body.rating,
       tags: body.tags ?? [],
@@ -218,26 +221,53 @@ export const handlers = [
   }),
 
   // ----------------------------------------------------------------- wines
+  http.get('/api/wines/facets', async () => {
+    await lag()
+    const wines = allWines()
+    const uniqueSorted = (values: string[]) =>
+      [...new Set(values)].sort((a, b) => a.localeCompare(b, 'ru'))
+    return HttpResponse.json({
+      regions: uniqueSorted(wines.map((w) => w.region)),
+      grapes: uniqueSorted(wines.flatMap((w) => w.grapes)),
+      producers: uniqueSorted(wines.map((w) => w.producer)),
+      pairings: uniqueSorted(wines.flatMap((w) => w.pairing)),
+    })
+  }),
+
   http.get('/api/wines', async ({ request }) => {
     await lag()
     const url = new URL(request.url)
     const p = url.searchParams
     const query = (p.get('query') ?? '').trim().toLowerCase()
-    const types = p.getAll('type')
+    const colors = p.getAll('color')
+    const categories = p.getAll('category')
     const sweetness = p.getAll('sweetness')
     const regions = p.getAll('region')
+    const grapes = p.getAll('grape')
+    const producers = p.getAll('producer')
+    const pairings = p.getAll('pairing')
     const minRating = num(p.get('minRating'), 0)
     const maxPrice = num(p.get('maxPrice'), Number.POSITIVE_INFINITY)
+    const awardedOnly = p.get('awarded') === '1'
     const sort = (p.get('sort') ?? 'rating') as CatalogSort
+
+    // Every list narrows the result; within a list the values are alternatives.
+    const matchesAny = (selected: string[], values: string[]) =>
+      !selected.length || values.some((v) => selected.includes(v))
 
     const filtered = allWines().filter((w) => {
       const haystack = `${w.name} ${w.producer} ${w.region} ${w.grapes.join(' ')}`.toLowerCase()
       if (query && !haystack.includes(query)) return false
-      if (types.length && !types.includes(w.type)) return false
-      if (sweetness.length && !sweetness.includes(w.sweetness)) return false
-      if (regions.length && !regions.includes(w.region)) return false
+      if (!matchesAny(colors, [w.color])) return false
+      if (!matchesAny(categories, [w.category])) return false
+      if (!matchesAny(sweetness, [w.sweetness])) return false
+      if (!matchesAny(regions, [w.region])) return false
+      if (!matchesAny(grapes, w.grapes)) return false
+      if (!matchesAny(producers, [w.producer])) return false
+      if (!matchesAny(pairings, w.pairing)) return false
       if (w.rating < minRating) return false
       if (w.price > maxPrice) return false
+      if (awardedOnly && !w.awards.length) return false
       return true
     })
 

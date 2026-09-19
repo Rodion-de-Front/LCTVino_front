@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, toRef } from 'vue'
 import { useRouter } from 'vue-router'
+import CommentsSheet from '@/components/feed/CommentsSheet.vue'
 import CreatePostModal from '@/components/feed/CreatePostModal.vue'
+import PostCard from '@/components/feed/PostCard.vue'
 import TopBar from '@/components/layout/TopBar.vue'
 import ProfileTabs from '@/components/profile/ProfileTabs.vue'
 import StatCounter from '@/components/profile/StatCounter.vue'
@@ -9,14 +11,17 @@ import AppIcon from '@/components/ui/AppIcon.vue'
 import BottomSheet from '@/components/ui/BottomSheet.vue'
 import GlassButton from '@/components/ui/GlassButton.vue'
 import GlassField from '@/components/ui/GlassField.vue'
-import LazyImage from '@/components/ui/LazyImage.vue'
 import StarRating from '@/components/ui/StarRating.vue'
+import WineCard from '@/components/wine/WineCard.vue'
 import { useAuthStore } from '@/stores/auth'
+import { useFeedStore } from '@/stores/feed'
 import { useUiStore } from '@/stores/ui'
 import { useUserStore } from '@/stores/user'
+import type { Wine } from '@/types'
 
 const auth = useAuthStore()
 const userStore = useUserStore()
+const feed = useFeedStore()
 const ui = useUiStore()
 const router = useRouter()
 
@@ -45,6 +50,7 @@ const prefChips = computed(() => {
     red: 'Красное',
     white: 'Белое',
     rose: 'Розовое',
+    orange: 'Оранжевое',
     sparkling: 'Игристое',
     unknown: 'Открыт(а) ко всему',
   }
@@ -85,10 +91,20 @@ async function signOut() {
   router.replace('/auth')
 }
 
+function openWine(wine: Wine) {
+  router.push(`/wine/${wine.id}`)
+}
+
+// Likes and comments made here have to reach the copy shown in the feed too.
+let untrack = () => {}
+
 onMounted(() => {
+  untrack = feed.trackPosts(toRef(userStore, 'myPosts'))
   userStore.loadProfile()
   if (!userStore.myWines.length) userStore.loadMyWines()
 })
+
+onUnmounted(() => untrack())
 </script>
 
 <template>
@@ -173,79 +189,75 @@ onMounted(() => {
         </div>
       </section>
 
-      <div class="glass mt-4 rounded-sheet px-4 pt-2">
+      <div class="glass mt-4 rounded-sheet px-4 pb-1 pt-2">
         <ProfileTabs v-model="tab" :tabs="tabs" />
+      </div>
 
-        <div class="py-4">
-          <Transition name="fade" mode="out-in">
-            <div v-if="tab === 'posts'" key="posts" class="grid grid-cols-3 gap-2">
-              <button
-                v-for="(post, index) in userStore.myPosts"
-                :key="post.id"
-                v-motion
-                :initial="{ opacity: 0, scale: 0.9 }"
-                :enter="{ opacity: 1, scale: 1, transition: { delay: index * 60, duration: 340 } }"
-                type="button"
-                class="press overflow-hidden rounded-[16px]"
-                @click="router.push(`/wine/${post.wineId}`)"
-              >
-                <LazyImage :src="post.image" :alt="post.wineName" ratio="1 / 1" rounded="rounded-none" />
-              </button>
-              <p
-                v-if="!userStore.myPosts.length"
-                class="col-span-3 py-10 text-center text-footnote text-ink-muted"
-              >
-                Постов пока нет — расскажите о любимой бутылке
-              </p>
-            </div>
+      <!-- Tab content sits on the page background: posts and wines are glass
+           cards themselves and would otherwise stack glass on glass. -->
+      <div class="mt-4">
+        <Transition name="fade" mode="out-in">
+          <div v-if="tab === 'posts'" key="posts" class="space-y-4">
+            <PostCard
+              v-for="(post, index) in userStore.myPosts"
+              :key="post.id"
+              :post="post"
+              :index="index"
+              @like="feed.likePost"
+              @comment="feed.openComments"
+              @save="feed.toggleSave"
+            />
+            <p
+              v-if="!userStore.myPosts.length"
+              class="py-10 text-center text-footnote text-ink-muted"
+            >
+              Постов пока нет — расскажите о любимой бутылке
+            </p>
+          </div>
 
-            <ul v-else-if="tab === 'reviews'" key="reviews" class="space-y-2.5">
-              <li
-                v-for="(review, index) in userStore.myReviews"
-                :key="review.id"
-                v-motion
-                :initial="{ opacity: 0, x: 18 }"
-                :enter="{ opacity: 1, x: 0, transition: { delay: index * 60, duration: 340 } }"
-                class="rounded-glass bg-white/55 p-3"
-              >
-                <div class="flex items-center justify-between gap-2">
-                  <StarRating :model-value="review.rating" :size="13" />
-                  <span class="text-caption text-ink-faint">
-                    {{ new Date(review.createdAt).toLocaleDateString('ru-RU') }}
-                  </span>
-                </div>
-                <p class="mt-1.5 text-footnote text-ink">{{ review.text }}</p>
-              </li>
-              <p
-                v-if="!userStore.myReviews.length"
-                class="py-10 text-center text-footnote text-ink-muted"
-              >
-                Отзывов пока нет
-              </p>
-            </ul>
+          <ul v-else-if="tab === 'reviews'" key="reviews" class="space-y-2.5">
+            <li
+              v-for="(review, index) in userStore.myReviews"
+              :key="review.id"
+              v-motion
+              :initial="{ opacity: 0, x: 18 }"
+              :enter="{ opacity: 1, x: 0, transition: { delay: index * 60, duration: 340 } }"
+              class="glass rounded-glass p-3.5"
+            >
+              <div class="flex items-center justify-between gap-2">
+                <StarRating :model-value="review.rating" :size="13" />
+                <span class="text-caption text-ink-faint">
+                  {{ new Date(review.createdAt).toLocaleDateString('ru-RU') }}
+                </span>
+              </div>
+              <p class="mt-1.5 text-footnote text-ink">{{ review.text }}</p>
+            </li>
+            <p
+              v-if="!userStore.myReviews.length"
+              class="py-10 text-center text-footnote text-ink-muted"
+            >
+              Отзывов пока нет
+            </p>
+          </ul>
 
-            <div v-else key="favorites" class="grid grid-cols-3 gap-2">
-              <button
-                v-for="(entry, index) in userStore.favorites"
-                :key="entry.id"
-                v-motion
-                :initial="{ opacity: 0, scale: 0.9 }"
-                :enter="{ opacity: 1, scale: 1, transition: { delay: index * 60, duration: 340 } }"
-                type="button"
-                class="press overflow-hidden rounded-[16px]"
-                @click="router.push(`/wine/${entry.wineId}`)"
-              >
-                <LazyImage :src="entry.wine.image" :alt="entry.wine.name" ratio="1 / 1" rounded="rounded-none" />
-              </button>
-              <p
-                v-if="!userStore.favorites.length"
-                class="col-span-3 py-10 text-center text-footnote text-ink-muted"
-              >
-                В избранном пусто
-              </p>
-            </div>
-          </Transition>
-        </div>
+          <div v-else key="favorites" class="grid grid-cols-2 gap-3">
+            <WineCard
+              v-for="(entry, index) in userStore.favorites"
+              :key="entry.id"
+              :wine="entry.wine"
+              :index="index"
+              favorite
+              @open="openWine"
+              @favorite="userStore.toggleFavorite(entry.wineId)"
+            />
+            <p
+              v-if="!userStore.favorites.length"
+              class="col-span-2 py-10 text-center text-footnote text-ink-muted"
+            >
+              В избранном пусто
+            </p>
+          </div>
+        </Transition>
       </div>
     </main>
 
@@ -261,6 +273,7 @@ onMounted(() => {
     </button>
 
     <CreatePostModal @created="userStore.loadProfile()" />
+    <CommentsSheet />
 
     <BottomSheet v-model:open="editOpen" title="Редактировать профиль">
       <div class="space-y-4 py-2">

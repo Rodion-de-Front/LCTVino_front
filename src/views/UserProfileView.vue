@@ -1,19 +1,22 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, toRef, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import CommentsSheet from '@/components/feed/CommentsSheet.vue'
+import PostCard from '@/components/feed/PostCard.vue'
 import WineDropsLoader from '@/components/loaders/WineDropsLoader.vue'
 import ProfileTabs from '@/components/profile/ProfileTabs.vue'
 import StatCounter from '@/components/profile/StatCounter.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import GlassButton from '@/components/ui/GlassButton.vue'
-import LazyImage from '@/components/ui/LazyImage.vue'
 import StarRating from '@/components/ui/StarRating.vue'
 import { burst } from '@/composables/useConfetti'
+import { useFeedStore } from '@/stores/feed'
 import { useUserStore } from '@/stores/user'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const feed = useFeedStore()
 
 const tab = ref('posts')
 const followBtn = ref<HTMLElement | null>(null)
@@ -36,7 +39,16 @@ async function toggleFollow() {
 }
 
 watch(userId, (id) => id && userStore.loadUser(id))
-onMounted(() => userStore.loadUser(userId.value))
+
+// Likes here must also land on the copy rendered in the main feed.
+let untrack = () => {}
+
+onMounted(() => {
+  untrack = feed.trackPosts(toRef(userStore, 'viewedPosts'))
+  userStore.loadUser(userId.value)
+})
+
+onUnmounted(() => untrack())
 </script>
 
 <template>
@@ -100,63 +112,63 @@ onMounted(() => userStore.loadUser(userId.value))
         </div>
       </section>
 
-      <div class="glass mt-4 rounded-sheet px-4 pt-2">
+      <div class="glass mt-4 rounded-sheet px-4 pb-1 pt-2">
         <ProfileTabs v-model="tab" :tabs="tabs" />
+      </div>
 
-        <div class="py-4">
-          <Transition name="fade" mode="out-in">
-            <div v-if="tab === 'posts'" key="posts" class="grid grid-cols-3 gap-2">
-              <button
-                v-for="(post, index) in userStore.viewedPosts"
-                :key="post.id"
-                v-motion
-                :initial="{ opacity: 0, scale: 0.9 }"
-                :enter="{ opacity: 1, scale: 1, transition: { delay: index * 60, duration: 340 } }"
-                type="button"
-                class="press overflow-hidden rounded-[16px]"
-                @click="router.push(`/wine/${post.wineId}`)"
-              >
-                <LazyImage :src="post.image" :alt="post.wineName" ratio="1 / 1" rounded="rounded-none" />
-              </button>
-              <p
-                v-if="!userStore.viewedPosts.length"
-                class="col-span-3 py-10 text-center text-footnote text-ink-muted"
-              >
-                Постов пока нет
-              </p>
-            </div>
-
-            <ul v-else-if="tab === 'reviews'" key="reviews" class="space-y-2.5">
-              <li
-                v-for="(review, index) in userStore.viewedReviews"
-                :key="review.id"
-                v-motion
-                :initial="{ opacity: 0, x: 18 }"
-                :enter="{ opacity: 1, x: 0, transition: { delay: index * 60, duration: 340 } }"
-                class="rounded-glass bg-white/55 p-3"
-              >
-                <div class="flex items-center justify-between gap-2">
-                  <StarRating :model-value="review.rating" :size="13" />
-                  <span class="text-caption text-ink-faint">
-                    {{ new Date(review.createdAt).toLocaleDateString('ru-RU') }}
-                  </span>
-                </div>
-                <p class="mt-1.5 text-footnote text-ink">{{ review.text }}</p>
-              </li>
-              <p
-                v-if="!userStore.viewedReviews.length"
-                class="py-10 text-center text-footnote text-ink-muted"
-              >
-                Отзывов пока нет
-              </p>
-            </ul>
-
-            <p v-else key="favorites" class="py-10 text-center text-footnote text-ink-muted">
-              Избранное этого пользователя скрыто
+      <!-- Same as the feed: post cards bring their own glass surface. -->
+      <div class="mt-4">
+        <Transition name="fade" mode="out-in">
+          <div v-if="tab === 'posts'" key="posts" class="space-y-4">
+            <PostCard
+              v-for="(post, index) in userStore.viewedPosts"
+              :key="post.id"
+              :post="post"
+              :index="index"
+              @like="feed.likePost"
+              @comment="feed.openComments"
+              @save="feed.toggleSave"
+            />
+            <p
+              v-if="!userStore.viewedPosts.length"
+              class="py-10 text-center text-footnote text-ink-muted"
+            >
+              Постов пока нет
             </p>
-          </Transition>
-        </div>
+          </div>
+
+          <ul v-else-if="tab === 'reviews'" key="reviews" class="space-y-2.5">
+            <li
+              v-for="(review, index) in userStore.viewedReviews"
+              :key="review.id"
+              v-motion
+              :initial="{ opacity: 0, x: 18 }"
+              :enter="{ opacity: 1, x: 0, transition: { delay: index * 60, duration: 340 } }"
+              class="glass rounded-glass p-3.5"
+            >
+              <div class="flex items-center justify-between gap-2">
+                <StarRating :model-value="review.rating" :size="13" />
+                <span class="text-caption text-ink-faint">
+                  {{ new Date(review.createdAt).toLocaleDateString('ru-RU') }}
+                </span>
+              </div>
+              <p class="mt-1.5 text-footnote text-ink">{{ review.text }}</p>
+            </li>
+            <p
+              v-if="!userStore.viewedReviews.length"
+              class="py-10 text-center text-footnote text-ink-muted"
+            >
+              Отзывов пока нет
+            </p>
+          </ul>
+
+          <p v-else key="favorites" class="glass rounded-sheet py-10 text-center text-footnote text-ink-muted">
+            Избранное этого пользователя скрыто
+          </p>
+        </Transition>
       </div>
     </main>
+
+    <CommentsSheet />
   </div>
 </template>

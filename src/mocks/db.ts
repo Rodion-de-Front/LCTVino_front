@@ -1,7 +1,8 @@
 import type { AuthUser, CellarWine, Comment, Post, Preferences, Review, User, Wine } from '@/types'
 import { posts as seedPosts, reviews as seedReviews, users as seedUsers, wines } from './data'
 
-const STORAGE_KEY = 'vinora:db:v1'
+// v3: photo avatars, and wines carry colour/category/awards instead of `type`.
+const STORAGE_KEY = 'vinora:db:v3'
 
 interface Account {
   id: string

@@ -1,4 +1,6 @@
-export type WineType = 'red' | 'white' | 'rose' | 'sparkling'
+/** Colour and category are independent: a rosé can be still or sparkling. */
+export type WineColor = 'red' | 'white' | 'rose' | 'orange'
+export type WineCategory = 'still' | 'sparkling' | 'fortified'
 export type Sweetness = 'dry' | 'semi-dry' | 'semi-sweet' | 'sweet'
 export type Body = 'light' | 'medium' | 'full'
 export type Level = 'low' | 'medium' | 'high'
@@ -18,7 +20,8 @@ export interface Wine {
   producer: string
   country: string
   region: string
-  type: WineType
+  color: WineColor
+  category: WineCategory
   sweetness: Sweetness
   grapes: string[]
   year: number
@@ -29,8 +32,17 @@ export interface Wine {
   image: string
   description: string
   pairing: string[]
+  awards: string[]
   taste: TasteProfile
   similarIds: string[]
+}
+
+/** Option lists for the catalog filters, derived from the wine collection. */
+export interface CatalogFacets {
+  regions: string[]
+  grapes: string[]
+  producers: string[]
+  pairings: string[]
 }
 
 export interface User {
@@ -140,10 +152,15 @@ export type CatalogSort = 'rating' | 'price-asc' | 'price-desc' | 'newest' | 'na
 
 export interface CatalogFilters {
   query: string
-  types: WineType[]
+  colors: WineColor[]
+  categories: WineCategory[]
   sweetness: Sweetness[]
   regions: string[]
+  grapes: string[]
+  producers: string[]
+  pairings: string[]
   minRating: number
+  awardedOnly: boolean
   maxPrice: number
   sort: CatalogSort
 }

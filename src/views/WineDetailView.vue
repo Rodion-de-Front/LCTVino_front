@@ -31,11 +31,16 @@ const wineId = computed(() => String(route.params.wineId))
 const wine = computed(() => catalog.currentWine)
 const entry = computed(() => userStore.cellarEntry(wineId.value))
 
-const TYPE_LABELS: Record<string, string> = {
-  red: 'Красное',
-  white: 'Белое',
-  rose: 'Розовое',
+const COLOR_LABELS: Record<string, string> = {
+  red: 'красное',
+  white: 'белое',
+  rose: 'розовое',
+  orange: 'оранжевое',
+}
+const CATEGORY_LABELS: Record<string, string> = {
+  still: 'Тихое',
   sparkling: 'Игристое',
+  fortified: 'Креплёное',
 }
 const SWEETNESS_LABELS: Record<string, string> = {
   dry: 'сухое',
@@ -52,7 +57,11 @@ const facts = computed(() =>
         {
           icon: 'glass',
           label: 'Тип',
-          value: `${TYPE_LABELS[wine.value.type]}, ${SWEETNESS_LABELS[wine.value.sweetness]}`,
+          value: [
+            CATEGORY_LABELS[wine.value.category],
+            COLOR_LABELS[wine.value.color],
+            SWEETNESS_LABELS[wine.value.sweetness],
+          ].join(', '),
         },
         { icon: 'sparkles', label: 'Урожай и крепость', value: `${wine.value.year} · ${wine.value.abv}%` },
       ]
@@ -223,6 +232,20 @@ onMounted(() => {
                 {{ dish }}
               </span>
             </div>
+          </div>
+
+          <div v-if="wine.awards.length" class="mt-5">
+            <p class="mb-2 text-footnote text-ink-muted">Награды</p>
+            <ul class="space-y-1.5">
+              <li
+                v-for="award in wine.awards"
+                :key="award"
+                class="flex items-center gap-2 rounded-pill bg-gold/15 px-3 py-1.5 text-caption text-wine-700"
+              >
+                <AppIcon name="sparkles" :size="15" class="shrink-0 text-gold" />
+                {{ award }}
+              </li>
+            </ul>
           </div>
         </section>
 

@@ -19,7 +19,8 @@ export default defineConfig({
         // importScripts() is unavailable in module workers, and the worker
         // pulls in MSW's script at runtime.
         rollupFormat: 'iife',
-        globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        // Bottle photos are precached so the catalog is not empty offline.
+        globPatterns: ['**/*.{js,css,html,svg,png,webp,woff2}'],
         globIgnores: ['mockServiceWorker.js', '**/node_modules/**'],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
       },

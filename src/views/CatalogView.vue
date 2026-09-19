@@ -6,12 +6,13 @@ import WineDropsLoader from '@/components/loaders/WineDropsLoader.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import BottomSheet from '@/components/ui/BottomSheet.vue'
 import GlassButton from '@/components/ui/GlassButton.vue'
+import SearchableChecklist from '@/components/ui/SearchableChecklist.vue'
 import WineCard from '@/components/wine/WineCard.vue'
 import { useInView } from '@/composables/useReveal'
-import { MAX_PRICE, REGIONS, useCatalogStore } from '@/stores/catalog'
+import { MAX_PRICE, useCatalogStore } from '@/stores/catalog'
 import { useUiStore } from '@/stores/ui'
 import { useUserStore } from '@/stores/user'
-import type { CatalogSort, Sweetness, Wine, WineType } from '@/types'
+import type { CatalogSort, Sweetness, Wine, WineCategory, WineColor } from '@/types'
 
 const catalog = useCatalogStore()
 const userStore = useUserStore()
@@ -22,11 +23,16 @@ const route = useRoute()
 const sentinel = ref<HTMLElement | null>(null)
 const sortOpen = ref(false)
 
-const TYPES: { value: WineType; label: string }[] = [
+const COLORS: { value: WineColor; label: string }[] = [
   { value: 'red', label: 'Красное' },
   { value: 'white', label: 'Белое' },
   { value: 'rose', label: 'Розовое' },
+  { value: 'orange', label: 'Оранжевое' },
+]
+const CATEGORIES: { value: WineCategory; label: string }[] = [
+  { value: 'still', label: 'Тихое' },
   { value: 'sparkling', label: 'Игристое' },
+  { value: 'fortified', label: 'Креплёное' },
 ]
 const SWEETNESS: { value: Sweetness; label: string }[] = [
   { value: 'dry', label: 'Сухое' },
@@ -62,9 +68,14 @@ watch(query, () => {
   debounce = window.setTimeout(() => catalog.searchWines(), 300)
 })
 
+// Any filter change re-runs the search; the query itself is debounced above.
 watch(
-  () => [catalog.filters.types.length, catalog.filters.sweetness.length, catalog.filters.regions.length, catalog.filters.minRating, catalog.filters.maxPrice, catalog.filters.sort],
+  () => {
+    const { query: _query, ...rest } = catalog.filters
+    return rest
+  },
   () => catalog.searchWines(),
+  { deep: true },
 )
 
 useInView(sentinel, () => catalog.loadMore())
@@ -86,6 +97,7 @@ onMounted(() => {
   const q = route.query.q
   if (typeof q === 'string') catalog.filters.query = q
   if (!catalog.wines.length || q) catalog.searchWines()
+  catalog.loadFacets()
   if (!userStore.myWines.length) userStore.loadMyWines()
 })
 </script>
@@ -216,22 +228,42 @@ onMounted(() => {
     <BottomSheet v-model:open="filtersOpen" title="Фильтры">
       <div class="space-y-6 py-2">
         <section>
-          <p class="mb-2.5 text-footnote font-medium text-ink-muted">Тип</p>
+          <p class="mb-2.5 text-footnote font-medium text-ink-muted">Цвет</p>
           <div class="flex flex-wrap gap-2">
             <button
-              v-for="type in TYPES"
-              :key="type.value"
+              v-for="color in COLORS"
+              :key="color.value"
               v-ripple="'rgba(114,47,55,0.14)'"
               type="button"
               class="press rounded-pill border px-4 py-2 text-footnote transition-all duration-300"
               :class="
-                catalog.filters.types.includes(type.value)
+                catalog.filters.colors.includes(color.value)
                   ? 'border-transparent bg-gradient-to-br from-wine-500 to-wine-700 text-white shadow-float'
                   : 'border-white/70 bg-white/50 text-ink'
               "
-              @click="catalog.toggleIn(catalog.filters.types, type.value)"
+              @click="catalog.toggleIn(catalog.filters.colors, color.value)"
             >
-              {{ type.label }}
+              {{ color.label }}
+            </button>
+          </div>
+        </section>
+
+        <section>
+          <p class="mb-2.5 text-footnote font-medium text-ink-muted">Категория</p>
+          <div class="flex flex-wrap gap-2">
+            <button
+              v-for="option in CATEGORIES"
+              :key="option.value"
+              type="button"
+              class="press rounded-pill border px-4 py-2 text-footnote transition-all duration-300"
+              :class="
+                catalog.filters.categories.includes(option.value)
+                  ? 'border-transparent bg-gradient-to-br from-wine-500 to-wine-700 text-white shadow-float'
+                  : 'border-white/70 bg-white/50 text-ink'
+              "
+              @click="catalog.toggleIn(catalog.filters.categories, option.value)"
+            >
+              {{ option.label }}
             </button>
           </div>
         </section>
@@ -256,29 +288,51 @@ onMounted(() => {
           </div>
         </section>
 
-        <section>
-          <p class="mb-2.5 text-footnote font-medium text-ink-muted">Регион</p>
-          <div class="flex flex-wrap gap-2">
-            <button
-              v-for="region in REGIONS"
-              :key="region"
-              type="button"
-              class="press rounded-pill border px-4 py-2 text-footnote transition-all duration-300"
-              :class="
-                catalog.filters.regions.includes(region)
-                  ? 'border-transparent bg-gradient-to-br from-wine-500 to-wine-700 text-white shadow-float'
-                  : 'border-white/70 bg-white/50 text-ink'
-              "
-              @click="catalog.toggleIn(catalog.filters.regions, region)"
-            >
-              {{ region }}
-            </button>
-          </div>
-        </section>
+        <SearchableChecklist
+          title="Регион"
+          all-label="Все регионы"
+          placeholder="Поиск региона"
+          :options="catalog.facets.regions"
+          :selected="catalog.filters.regions"
+          @toggle="catalog.toggleIn(catalog.filters.regions, $event)"
+          @clear="catalog.filters.regions = []"
+        />
+
+        <SearchableChecklist
+          title="Сорт винограда"
+          all-label="Все сорта винограда"
+          placeholder="Поиск сорта"
+          :options="catalog.facets.grapes"
+          :selected="catalog.filters.grapes"
+          @toggle="catalog.toggleIn(catalog.filters.grapes, $event)"
+          @clear="catalog.filters.grapes = []"
+        />
+
+        <SearchableChecklist
+          title="Производитель"
+          all-label="Все производители"
+          placeholder="Поиск производителя"
+          :options="catalog.facets.producers"
+          :selected="catalog.filters.producers"
+          @toggle="catalog.toggleIn(catalog.filters.producers, $event)"
+          @clear="catalog.filters.producers = []"
+        />
+
+        <SearchableChecklist
+          title="Гастросочетания"
+          all-label="Все гастросочетания"
+          placeholder="Поиск блюда"
+          :options="catalog.facets.pairings"
+          :selected="catalog.filters.pairings"
+          @toggle="catalog.toggleIn(catalog.filters.pairings, $event)"
+          @clear="catalog.filters.pairings = []"
+        />
 
         <section>
+          <p class="mb-2.5 text-footnote font-medium text-ink-muted">Рейтинги и награды</p>
+
           <div class="mb-2 flex items-center justify-between">
-            <p class="text-footnote font-medium text-ink-muted">Рейтинг от</p>
+            <span class="text-caption text-ink-muted">Рейтинг от</span>
             <span class="text-footnote font-semibold text-wine-600">
               {{ catalog.filters.minRating.toFixed(1) }}
             </span>
@@ -291,6 +345,21 @@ onMounted(() => {
             step="0.5"
             class="w-full accent-wine-600"
           />
+
+          <button
+            type="button"
+            class="press mt-3 flex w-full items-center gap-2.5 rounded-glass border px-3.5 py-2.5 text-left text-footnote transition-all duration-300"
+            :class="
+              catalog.filters.awardedOnly
+                ? 'border-transparent bg-gradient-to-br from-wine-500 to-wine-700 text-white shadow-float'
+                : 'border-white/70 bg-white/50 text-ink'
+            "
+            :aria-pressed="catalog.filters.awardedOnly"
+            @click="catalog.filters.awardedOnly = !catalog.filters.awardedOnly"
+          >
+            <AppIcon name="sparkles" :size="18" />
+            Только отмеченные наградами
+          </button>
         </section>
 
         <section>

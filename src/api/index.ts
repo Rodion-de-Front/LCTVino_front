@@ -1,6 +1,7 @@
 import type {
   AuthResponse,
   AuthUser,
+  CatalogFacets,
   CatalogFilters,
   CellarWine,
   Comment,
@@ -50,10 +51,15 @@ export const feedApi = {
 function filterParams(filters: CatalogFilters, page: number, perPage: number) {
   const params = new URLSearchParams()
   if (filters.query) params.set('query', filters.query)
-  filters.types.forEach((t) => params.append('type', t))
+  filters.colors.forEach((c) => params.append('color', c))
+  filters.categories.forEach((c) => params.append('category', c))
   filters.sweetness.forEach((s) => params.append('sweetness', s))
   filters.regions.forEach((r) => params.append('region', r))
+  filters.grapes.forEach((g) => params.append('grape', g))
+  filters.producers.forEach((p) => params.append('producer', p))
+  filters.pairings.forEach((p) => params.append('pairing', p))
   if (filters.minRating > 0) params.set('minRating', String(filters.minRating))
+  if (filters.awardedOnly) params.set('awarded', '1')
   if (Number.isFinite(filters.maxPrice)) params.set('maxPrice', String(filters.maxPrice))
   params.set('sort', filters.sort)
   params.set('page', String(page))
@@ -66,6 +72,7 @@ export const catalogApi = {
     api
       .get<Paginated<Wine>>('/wines', { params: filterParams(filters, page, perPage) })
       .then((r) => r.data),
+  facets: () => api.get<CatalogFacets>('/wines/facets').then((r) => r.data),
   wine: (wineId: string) => api.get<WineDetail>(`/wines/${wineId}`).then((r) => r.data),
   reviews: (wineId: string) => api.get<Review[]>(`/wines/${wineId}/reviews`).then((r) => r.data),
   addReview: (wineId: string, rating: number, text: string) =>

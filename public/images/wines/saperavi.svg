@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 800" width="600" height="800">
+  <defs>
+    <linearGradient id="b2bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F7E9E4"/><stop offset="1" stop-color="#E7CFCB"/>
+    </linearGradient>
+    <radialGradient id="b2glow" cx="50%" cy="22%" r="62%">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="b2glass" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#5C262C"/>
+      <stop offset="0.42" stop-color="#8B3A3A"/>
+      <stop offset="0.68" stop-color="#5C262C"/>
+      <stop offset="1" stop-color="#2B1214"/>
+    </linearGradient>
+    <linearGradient id="b2liq" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#722F37" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#722F37" stop-opacity="0.45"/>
+    </linearGradient>
+    <linearGradient id="b2label" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FBF7F1"/><stop offset="1" stop-color="#EADFD2"/>
+    </linearGradient>
+    <filter id="b2soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="18"/>
+    </filter>
+  </defs>
+
+  <rect width="600" height="800" fill="url(#b2bg)"/>
+  <rect width="600" height="800" fill="url(#b2glow)"/>
+  <circle cx="240" cy="560" r="150" fill="#ffffff" opacity="0.28" filter="url(#b2soft)"/>
+
+  <g transform="translate(300 400) rotate(-1.1) translate(-300 -400)">
+    <ellipse cx="300" cy="712" rx="128" ry="26" fill="#5C262C" opacity="0.22" filter="url(#b2soft)"/>
+    <path d="M262 96 h76 v138 c0 34 62 72 62 154 v256 c0 34-24 56-58 56 h-84 c-34 0-58-22-58-56 V388 c0-82 62-120 62-154 z"
+          fill="url(#b2glass)"/>
+    <path d="M262 96 h76 v40 h-76 z" fill="#2B1214" opacity="0.85"/>
+    <path d="M254 132 h92 v56 h-92 z" fill="#5C262C" opacity="0.9"/>
+    <path d="M232 470 h136 v168 c0 24-16 38-40 38 h-56 c-24 0-40-14-40-38 z" fill="url(#b2liq)" opacity="0.55"/>
+    <rect x="216" y="418" width="168" height="196" rx="10" fill="url(#b2label)"/>
+    <rect x="216" y="418" width="168" height="196" rx="10" fill="none" stroke="#C9A961" stroke-width="2.5" opacity="0.8"/>
+    <text x="300" y="486" text-anchor="middle" font-family="Georgia, serif" font-size="46" fill="#722F37">SP</text>
+    <path d="M250 508 h100" stroke="#C9A961" stroke-width="2"/>
+    <text x="300" y="548" text-anchor="middle" font-family="Georgia, serif" font-size="22" fill="#6F615C" letter-spacing="3">2020</text>
+    <text x="300" y="586" text-anchor="middle" font-family="Georgia, serif" font-size="14" fill="#9A8C86" letter-spacing="4">VINORA</text>
+    <path d="M276 150 c-14 60-26 96-26 150 v340" stroke="#ffffff" stroke-opacity="0.34" stroke-width="12" fill="none" stroke-linecap="round"/>
+  </g>
+</svg>

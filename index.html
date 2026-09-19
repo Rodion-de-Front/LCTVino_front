@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Vinora</title>
+    <meta name="description" content="Социальная сеть для любителей вина: лента, рейтинги, сканер этикеток и личный погреб." />
+    <meta name="theme-color" content="#722F37" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Vinora" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <style>
+      /* Pre-hydration splash so there is never a white flash on cold start. */
+      #boot {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(120% 90% at 50% 0%, #faf3f0 0%, #f5f0eb 52%, #efe2df 100%);
+        z-index: 200;
+      }
+      #boot svg {
+        animation: boot-float 2.4s ease-in-out infinite;
+      }
+      @keyframes boot-float {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-8px);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <div id="boot">
+      <svg width="96" height="96" viewBox="0 0 100 100" fill="none">
+        <path d="M28 26h44c0 22-9 32-22 32S28 48 28 26Z" stroke="#722F37" stroke-width="2.6" />
+        <path d="M50 58v22M36 80h28" stroke="#722F37" stroke-width="2.6" stroke-linecap="round" />
+      </svg>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

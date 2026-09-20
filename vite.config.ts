@@ -25,8 +25,8 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
       },
       manifest: {
-        name: 'Vinora — социальная сеть для любителей вина',
-        short_name: 'Vinora',
+        name: 'LCT Vino — социальная сеть для любителей вина',
+        short_name: 'LCT Vino',
         description:
           'Лента, рейтинги, сканер этикеток и персональный винный погреб в одном приложении.',
         lang: 'ru',

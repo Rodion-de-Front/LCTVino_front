@@ -2,9 +2,10 @@
 import { nextTick, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import AppIcon from '@/components/ui/AppIcon.vue'
+import BrandLogo from '@/components/layout/BrandLogo.vue'
 
 withDefaults(defineProps<{ title?: string; notifications?: number; searchable?: boolean }>(), {
-  title: 'Vinora',
+  title: 'LCT Vino',
   notifications: 0,
   searchable: true,
 })
@@ -35,13 +36,8 @@ function ringBell() {
   <header class="pointer-events-none fixed inset-x-0 top-0 z-40 px-3 pt-[calc(var(--safe-top)+10px)]">
     <div class="glass-strong pointer-events-auto flex h-14 items-center gap-2 rounded-[26px] px-3">
       <Transition name="fade" mode="out-in">
-        <div v-if="!searchOpen" key="brand" class="flex min-w-0 flex-1 items-center gap-2">
-          <span
-            class="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-wine-500 to-wine-700 text-white shadow-float"
-          >
-            <AppIcon name="glass" :size="19" />
-          </span>
-          <h1 class="truncate text-title text-gradient-wine">{{ title }}</h1>
+        <div v-if="!searchOpen" key="brand" class="flex min-w-0 flex-1 items-center">
+          <BrandLogo size="sm" />
         </div>
 
         <div v-else key="search" class="flex min-w-0 flex-1 items-center gap-2">

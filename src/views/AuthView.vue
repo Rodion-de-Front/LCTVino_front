@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AuthBackdrop from '@/components/layout/AuthBackdrop.vue'
-import AppIcon from '@/components/ui/AppIcon.vue'
+import BrandLogo from '@/components/layout/BrandLogo.vue'
 import GlassButton from '@/components/ui/GlassButton.vue'
 import GlassField from '@/components/ui/GlassField.vue'
 import { useAuthStore } from '@/stores/auth'
@@ -53,15 +53,9 @@ function useDemo() {
         v-motion
         :initial="{ opacity: 0, y: 24 }"
         :enter="{ opacity: 1, y: 0, transition: { duration: 480 } }"
-        class="mb-8 text-center"
+        class="mb-8 flex justify-center"
       >
-        <span
-          class="mx-auto mb-4 flex h-[72px] w-[72px] items-center justify-center rounded-[24px] bg-gradient-to-br from-wine-500 to-wine-700 text-white shadow-float"
-        >
-          <AppIcon name="glass" :size="36" />
-        </span>
-        <h1 class="text-hero text-gradient-wine">Vinora</h1>
-        <p class="mt-1 text-footnote text-ink-muted">Ваш винный дневник и сообщество</p>
+        <BrandLogo size="lg" />
       </div>
 
       <form

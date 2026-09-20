@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
+import BrandLogo from '@/components/layout/BrandLogo.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import GlassButton from '@/components/ui/GlassButton.vue'
 import { isStandalone } from '@/pwa/register'
@@ -31,7 +32,7 @@ async function install() {
   ui.closeModal('install')
   deferred.value = null
   ui.installPromptReady = false
-  if (outcome === 'accepted') ui.notify({ type: 'success', title: 'Vinora добавлена на экран' })
+  if (outcome === 'accepted') ui.notify({ type: 'success', title: 'LCT Vino добавлен на экран' })
 }
 
 function dismiss() {
@@ -53,12 +54,8 @@ onBeforeUnmount(() => window.removeEventListener('beforeinstallprompt', onBefore
       >
         <Transition name="sheet" appear>
           <div class="glass-strong w-full max-w-md rounded-sheet p-6 text-center">
-            <span
-              class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-[20px] bg-gradient-to-br from-wine-500 to-wine-700 text-white shadow-float"
-            >
-              <AppIcon name="glass" :size="32" />
-            </span>
-            <h2 class="text-title-lg text-ink">Vinora на домашнем экране</h2>
+            <BrandLogo size="md" stacked class="justify-center" />
+            <h2 class="mt-4 text-title-lg text-ink">LCT Vino на домашнем экране</h2>
             <p class="mt-2 text-footnote text-ink-muted">
               Быстрый запуск, полноэкранный режим и доступ к погребу даже без интернета.
             </p>

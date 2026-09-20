@@ -45,7 +45,7 @@ onMounted(() => {
 
 <template>
   <div class="h-full">
-    <TopBar v-model:query="search" title="Vinora" :notifications="3" />
+    <TopBar v-model:query="search" title="LCT Vino" :notifications="3" />
 
     <!-- Pull-to-refresh indicator sits behind the list and is revealed as it moves. -->
     <div

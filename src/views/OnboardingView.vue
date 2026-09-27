@@ -169,7 +169,6 @@ async function finish() {
     celebrate()
     ui.haptic([14, 40, 14, 40, 20])
   } catch {
-    ui.notify({ type: 'error', title: 'Не удалось сохранить предпочтения' })
   } finally {
     saving.value = false
   }

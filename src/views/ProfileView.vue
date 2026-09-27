@@ -12,12 +12,10 @@ import BottomSheet from '@/components/ui/BottomSheet.vue'
 import GlassButton from '@/components/ui/GlassButton.vue'
 import GlassField from '@/components/ui/GlassField.vue'
 import StarRating from '@/components/ui/StarRating.vue'
-import WineCard from '@/components/wine/WineCard.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useFeedStore } from '@/stores/feed'
 import { useUiStore } from '@/stores/ui'
 import { useUserStore } from '@/stores/user'
-import type { Wine } from '@/types'
 
 const auth = useAuthStore()
 const userStore = useUserStore()
@@ -35,7 +33,6 @@ const user = computed(() => auth.user)
 const tabs = computed(() => [
   { value: 'posts', label: 'Посты', count: userStore.myPosts.length },
   { value: 'reviews', label: 'Отзывы', count: userStore.myReviews.length },
-  { value: 'favorites', label: 'Избранное', count: userStore.favorites.length },
 ])
 
 const editOpen = computed({
@@ -91,17 +88,12 @@ async function signOut() {
   router.replace('/auth')
 }
 
-function openWine(wine: Wine) {
-  router.push(`/wine/${wine.id}`)
-}
-
 // Likes and comments made here have to reach the copy shown in the feed too.
 let untrack = () => {}
 
 onMounted(() => {
   untrack = feed.trackPosts(toRef(userStore, 'myPosts'))
   userStore.loadProfile()
-  if (!userStore.myWines.length) userStore.loadMyWines()
 })
 
 onUnmounted(() => untrack())
@@ -205,7 +197,6 @@ onUnmounted(() => untrack())
               :index="index"
               @like="feed.likePost"
               @comment="feed.openComments"
-              @save="feed.toggleSave"
             />
             <p
               v-if="!userStore.myPosts.length"
@@ -240,23 +231,6 @@ onUnmounted(() => untrack())
             </p>
           </ul>
 
-          <div v-else key="favorites" class="grid grid-cols-2 gap-3">
-            <WineCard
-              v-for="(entry, index) in userStore.favorites"
-              :key="entry.id"
-              :wine="entry.wine"
-              :index="index"
-              favorite
-              @open="openWine"
-              @favorite="userStore.toggleFavorite(entry.wineId)"
-            />
-            <p
-              v-if="!userStore.favorites.length"
-              class="col-span-2 py-10 text-center text-footnote text-ink-muted"
-            >
-              В избранном пусто
-            </p>
-          </div>
         </Transition>
       </div>
     </main>

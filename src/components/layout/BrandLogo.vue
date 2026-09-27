@@ -12,5 +12,5 @@ const imageSize = {
 </script>
 
 <template>
-  <img src="/images/logo.svg" alt="LCT Vino" class="shrink-0 object-contain" :class="imageSize[size]" />
+  <img src="/images/logo.svg" alt="Своё Вино" class="shrink-0 object-contain" :class="imageSize[size]" />
 </template>

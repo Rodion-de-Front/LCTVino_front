@@ -27,7 +27,8 @@ const draftNote = ref('')
 
 const segments = computed(() => [
   { value: 'all', label: 'Все', badge: userStore.myWines.length },
-  { value: 'favorites', label: 'Избранные', badge: userStore.favorites.length },
+  { value: 'favorites', label: 'Избранное', badge: userStore.favorites.length },
+  { value: 'scanned', label: 'Сканы', badge: userStore.scanned.length },
   { value: 'rated', label: 'Оценённые', badge: userStore.rated.length },
 ])
 
@@ -82,17 +83,17 @@ onMounted(() => {
       <div class="relative mt-3 flex justify-end">
         <button
           type="button"
-          class="press flex items-center gap-1 rounded-pill bg-white/60 px-3 py-1.5 text-caption text-wine-700"
+          class="press flex max-w-full items-center gap-1 rounded-pill bg-white/60 px-3 py-1.5 text-caption text-wine-700"
           @click="sortOpen = !sortOpen"
         >
-          <AppIcon name="filter" :size="14" />
-          {{ sortLabel }}
+          <AppIcon name="filter" :size="14" class="shrink-0" />
+          <span class="min-w-0 truncate">{{ sortLabel }}</span>
         </button>
 
         <Transition name="pop">
           <ul
             v-if="sortOpen"
-            class="glass-strong absolute right-0 top-9 z-30 w-56 overflow-hidden rounded-glass p-1"
+            class="glass-menu absolute right-0 top-9 z-30 w-56 overflow-hidden rounded-glass p-1"
           >
             <li v-for="option in SORTS" :key="option.value">
               <button
@@ -135,12 +136,16 @@ onMounted(() => {
                 ratio="3 / 4"
                 rounded="rounded-[16px]"
               />
-              <span
-                v-if="entry.favorite"
-                class="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/75 text-wine-600 backdrop-blur-md"
+              <button
+                type="button"
+                class="press absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-full bg-white/75 backdrop-blur-md transition-colors duration-200"
+                :class="entry.favorite ? 'text-wine-600' : 'text-ink-faint'"
+                :aria-pressed="entry.favorite"
+                :aria-label="entry.favorite ? 'Убрать из избранного' : 'В избранное'"
+                @click.stop="userStore.toggleFavorite(entry.wineId)"
               >
-                <AppIcon name="heart" :size="16" filled />
-              </span>
+                <AppIcon name="heart" :size="18" :filled="entry.favorite" />
+              </button>
             </div>
             <h3 class="mt-2 truncate px-1 text-footnote font-semibold text-ink">
               {{ entry.wine.name }}
@@ -194,25 +199,9 @@ onMounted(() => {
 
         <GlassField v-model="draftNote" label="Заметка о дегустации" multiline :rows="4" />
 
-        <div class="flex items-center justify-between">
-          <button
-            type="button"
-            class="press flex items-center gap-2 text-footnote"
-            :class="selected.favorite ? 'text-wine-600' : 'text-ink-muted'"
-            @click="userStore.toggleFavorite(selected.wineId)"
-          >
-            <AppIcon name="heart" :size="19" :filled="selected.favorite" />
-            {{ selected.favorite ? 'В избранном' : 'В избранное' }}
-          </button>
-          <button
-            type="button"
-            class="press flex items-center gap-2 text-footnote text-[#B4404A]"
-            @click="remove"
-          >
-            <AppIcon name="trash" :size="18" />
-            Убрать
-          </button>
-        </div>
+        <GlassButton v-if="tab !== 'favorites'" variant="glass" size="md" block @click="remove">
+          Удалить
+        </GlassButton>
       </div>
 
       <template #footer>

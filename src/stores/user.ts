@@ -1,12 +1,11 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { feedApi, userApi } from '@/api'
-import { errorMessage } from '@/api/client'
 import type { CellarWine, Post, Preferences, Review, User } from '@/types'
 import { useAuthStore } from './auth'
 import { useUiStore } from './ui'
 
-export type CellarTab = 'all' | 'favorites' | 'rated'
+export type CellarTab = 'all' | 'favorites' | 'scanned' | 'rated'
 
 export const useUserStore = defineStore('user', () => {
   const auth = useAuthStore()
@@ -27,10 +26,12 @@ export const useUserStore = defineStore('user', () => {
   const loadingViewed = ref(false)
 
   const favorites = computed(() => myWines.value.filter((w) => w.favorite))
+  const scanned = computed(() => myWines.value.filter((w) => w.scanned))
   const rated = computed(() => myWines.value.filter((w) => w.rating !== null))
 
   function cellarTab(tab: CellarTab) {
     if (tab === 'favorites') return favorites.value
+    if (tab === 'scanned') return scanned.value
     if (tab === 'rated') return rated.value
     return myWines.value
   }
@@ -58,8 +59,7 @@ export const useUserStore = defineStore('user', () => {
     loadingCellar.value = true
     try {
       myWines.value = await userApi.cellar()
-    } catch (e) {
-      ui.notify({ type: 'error', title: errorMessage(e, 'Погреб недоступен') })
+    } catch {
     } finally {
       loadingCellar.value = false
     }
@@ -68,7 +68,6 @@ export const useUserStore = defineStore('user', () => {
   async function updateProfile(patch: Partial<Pick<User, 'name' | 'bio' | 'location' | 'avatar'>>) {
     const updated = await userApi.update(patch)
     auth.applyUser(updated)
-    ui.notify({ type: 'success', title: 'Профиль обновлён' })
     return updated
   }
 
@@ -78,22 +77,15 @@ export const useUserStore = defineStore('user', () => {
     return updated
   }
 
-  async function addWine(wineId: string, options: { favorite?: boolean; rating?: number | null; note?: string } = {}) {
+  async function addWine(
+    wineId: string,
+    options: { favorite?: boolean; scanned?: boolean; rating?: number | null; note?: string } = {},
+  ) {
     const entry = await userApi.addWine({ wineId, ...options })
     const index = myWines.value.findIndex((w) => w.wineId === wineId)
     index === -1 ? myWines.value.unshift(entry) : (myWines.value[index] = entry)
     ui.haptic([10, 20, 10])
-    ui.notify({ type: 'success', title: 'Добавлено в погреб', description: entry.wine.name })
     return entry
-  }
-
-  async function toggleFavorite(wineId: string) {
-    const entry = cellarEntry(wineId)
-    if (!entry) return addWine(wineId, { favorite: true })
-    const updated = await userApi.updateWine(entry.id, { favorite: !entry.favorite })
-    Object.assign(entry, updated)
-    ui.haptic()
-    return updated
   }
 
   async function rateWine(wineId: string, rating: number, note?: string) {
@@ -101,13 +93,26 @@ export const useUserStore = defineStore('user', () => {
     if (!entry) return addWine(wineId, { rating, note })
     const updated = await userApi.updateWine(entry.id, { rating, ...(note !== undefined && { note }) })
     Object.assign(entry, updated)
-    ui.notify({ type: 'success', title: 'Оценка сохранена' })
     return updated
   }
 
   async function removeWine(entryId: string) {
     await userApi.removeWine(entryId)
     myWines.value = myWines.value.filter((w) => w.id !== entryId)
+  }
+
+  async function toggleFavorite(wineId: string) {
+    const entry = cellarEntry(wineId)
+    if (!entry) return addWine(wineId, { favorite: true })
+    const favorite = !entry.favorite
+    if (!favorite && !entry.scanned && entry.rating === null) {
+      await removeWine(entry.id)
+      return null
+    }
+    const updated = await userApi.updateWine(entry.id, { favorite })
+    Object.assign(entry, updated)
+    ui.haptic()
+    return updated
   }
 
   async function loadUser(userId: string) {
@@ -123,8 +128,7 @@ export const useUserStore = defineStore('user', () => {
       viewedPosts.value = posts
       viewedReviews.value = reviews
       return user
-    } catch (e) {
-      ui.notify({ type: 'error', title: errorMessage(e, 'Профиль недоступен') })
+    } catch {
       return null
     } finally {
       loadingViewed.value = false
@@ -155,6 +159,7 @@ export const useUserStore = defineStore('user', () => {
     myPosts,
     myReviews,
     favorites,
+    scanned,
     rated,
     loadingCellar,
     loadingProfile,

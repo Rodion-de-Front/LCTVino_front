@@ -9,16 +9,13 @@ import GlassField from '@/components/ui/GlassField.vue'
 import LazyImage from '@/components/ui/LazyImage.vue'
 import StarRating from '@/components/ui/StarRating.vue'
 import TasteProfileBars from '@/components/wine/TasteProfileBars.vue'
-import { burst } from '@/composables/useConfetti'
 import { useCatalogStore } from '@/stores/catalog'
-import { useUiStore } from '@/stores/ui'
 import { useUserStore } from '@/stores/user'
 
 const route = useRoute()
 const router = useRouter()
 const catalog = useCatalogStore()
 const userStore = useUserStore()
-const ui = useUiStore()
 
 const scroller = ref<HTMLElement | null>(null)
 const scrollY = ref(0)
@@ -70,18 +67,9 @@ const facts = computed(() =>
 
 const onScroll = (event: Event) => (scrollY.value = (event.target as HTMLElement).scrollTop)
 
-async function addToCellar() {
+async function toggleFavorite() {
   if (!wine.value) return
-  await userStore.addWine(wine.value.id)
-}
-
-async function toggleFavorite(event: MouseEvent) {
-  if (!wine.value) return
-  const wasFavorite = entry.value?.favorite ?? false
   await userStore.toggleFavorite(wine.value.id)
-  if (!wasFavorite) {
-    burst(event.currentTarget as HTMLElement, { count: 12, power: 90, shape: 'heart' })
-  }
 }
 
 async function submitReview() {
@@ -93,7 +81,6 @@ async function submitReview() {
     reviewOpen.value = false
     myNote.value = ''
   } catch {
-    ui.notify({ type: 'error', title: 'Отзыв не сохранился' })
   } finally {
     saving.value = false
   }
@@ -176,11 +163,7 @@ onMounted(() => {
             </span>
           </div>
 
-          <div class="mt-4 flex gap-2">
-            <GlassButton variant="primary" size="md" block @click="addToCellar">
-              <AppIcon name="plus" :size="18" />
-              {{ entry ? 'В погребе' : 'В погреб' }}
-            </GlassButton>
+          <div class="mt-4">
             <GlassButton variant="gold" size="md" block @click="reviewOpen = true">
               <AppIcon name="star" :size="18" />
               Оценить

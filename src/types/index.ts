@@ -100,6 +100,7 @@ export interface CellarWine {
   wineId: string
   wine: Wine
   favorite: boolean
+  scanned: boolean
   rating: number | null
   note: string
   addedAt: string
@@ -139,13 +140,6 @@ export interface Paginated<T> {
   perPage: number
   total: number
   hasMore: boolean
-}
-
-export interface AppNotification {
-  id: string
-  type: 'success' | 'error' | 'info'
-  title: string
-  description?: string
 }
 
 export type CatalogSort = 'rating' | 'price-asc' | 'price-desc' | 'newest' | 'name'

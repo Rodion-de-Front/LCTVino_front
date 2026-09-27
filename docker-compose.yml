@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: vinora
+      POSTGRES_PASSWORD: vinora
+      POSTGRES_DB: vinora
+    ports:
+      - "5432:5432"
+    volumes:
+      - vinora-pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vinora -d vinora"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  backend:
+    build: ./backend
+    environment:
+      NUXT_DATABASE_URL: postgres://vinora:vinora@db:5432/vinora
+      DATABASE_URL: postgres://vinora:vinora@db:5432/vinora
+      HOST: 0.0.0.0
+      PORT: "3000"
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+volumes:
+  vinora-pg:

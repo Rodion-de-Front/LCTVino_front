@@ -7,26 +7,22 @@ export default defineConfig({
   plugins: [
     vue(),
     VitePWA({
-      // A single worker does both jobs: Workbox caching and MSW mocking.
-      // Two separate registrations would fight over the root scope.
       strategies: 'injectManifest',
       srcDir: 'src/pwa',
       filename: 'sw.ts',
       registerType: 'prompt',
       injectRegister: null,
-      includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'mockServiceWorker.js'],
+      includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       injectManifest: {
-        // importScripts() is unavailable in module workers, and the worker
-        // pulls in MSW's script at runtime.
         rollupFormat: 'iife',
         // Bottle photos are precached so the catalog is not empty offline.
         globPatterns: ['**/*.{js,css,html,svg,png,webp,woff2}'],
-        globIgnores: ['mockServiceWorker.js', '**/node_modules/**'],
+        globIgnores: ['**/node_modules/**'],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
       },
       manifest: {
-        name: 'LCT Vino — социальная сеть для любителей вина',
-        short_name: 'LCT Vino',
+        name: 'Своё Вино',
+        short_name: 'Своё Вино',
         description:
           'Лента, рейтинги, сканер этикеток и персональный винный погреб в одном приложении.',
         lang: 'ru',
@@ -57,6 +53,13 @@ export default defineConfig({
     },
   },
   server: {
+    host: true,
     port: 5173,
+    proxy: {
+      '/api': {
+        target: process.env.VITE_API_PROXY || 'http://127.0.0.1:3000',
+        changeOrigin: true,
+      },
+    },
   },
 })

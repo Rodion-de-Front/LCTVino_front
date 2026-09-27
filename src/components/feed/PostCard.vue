@@ -8,14 +8,14 @@ import { burst } from '@/composables/useConfetti'
 import type { Post } from '@/types'
 
 const props = defineProps<{ post: Post; index?: number }>()
-const emit = defineEmits<{ like: [string]; comment: [string]; save: [string]; share: [Post] }>()
+const emit = defineEmits<{ like: [string]; comment: [string]; share: [Post] }>()
 
-const heart = ref<HTMLElement | null>(null)
+const likeTarget = ref<HTMLElement | null>(null)
 const popping = ref(false)
 
 function like() {
-  if (!props.post.likedByMe && heart.value) {
-    burst(heart.value, { count: 14, power: 96, shape: 'heart', colors: ['#8B3A3A', '#722F37', '#D4A574'] })
+  if (!props.post.likedByMe && likeTarget.value) {
+    burst(likeTarget.value, { count: 14, power: 96, colors: ['#8B3A3A', '#722F37', '#D4A574'] })
   }
   popping.value = true
   window.setTimeout(() => (popping.value = false), 500)
@@ -99,7 +99,7 @@ const age = computed(() => {
 
     <footer class="mt-3 flex items-center gap-1 border-t border-white/50 pt-3">
       <button
-        ref="heart"
+        ref="likeTarget"
         type="button"
         class="press flex items-center gap-1.5 rounded-pill px-2.5 py-1.5 transition-colors duration-200"
         :class="post.likedByMe ? 'text-wine-600' : 'text-ink-muted hover:bg-white/50'"
@@ -107,10 +107,10 @@ const age = computed(() => {
         @click="like"
       >
         <AppIcon
-          name="heart"
+          name="sparkles"
           :size="21"
           :filled="post.likedByMe"
-          :class="popping && 'animate-heart-pop'"
+          :class="popping && 'animate-pop-bounce'"
         />
         <span class="text-footnote font-medium tabular-nums">{{ post.likes }}</span>
       </button>
@@ -125,16 +125,6 @@ const age = computed(() => {
       </button>
 
       <span class="flex-1" />
-
-      <button
-        type="button"
-        class="press flex h-9 w-9 items-center justify-center rounded-full transition-colors duration-200"
-        :class="post.savedByMe ? 'text-gold' : 'text-ink-muted hover:bg-white/50'"
-        :aria-pressed="post.savedByMe"
-        @click="emit('save', post.id)"
-      >
-        <AppIcon name="bookmark" :size="20" :filled="post.savedByMe" />
-      </button>
 
       <button
         type="button"

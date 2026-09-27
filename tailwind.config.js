@@ -99,7 +99,7 @@ export default {
           '20%': { opacity: '0.9' },
           '100%': { transform: 'translateY(-150px) scale(1.15)', opacity: '0' },
         },
-        'heart-pop': {
+        'pop-bounce': {
           '0%': { transform: 'scale(1)' },
           '35%': { transform: 'scale(1.35)' },
           '60%': { transform: 'scale(0.9)' },
@@ -120,7 +120,7 @@ export default {
       animation: {
         'wave-shift': 'wave-shift 2.4s linear infinite',
         'bottle-spin': 'bottle-spin 2.2s linear infinite',
-        'heart-pop': 'heart-pop 480ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+        'pop-bounce': 'pop-bounce 480ms cubic-bezier(0.34, 1.56, 0.64, 1)',
         shimmer: 'shimmer 1.6s infinite',
         'float-y': 'float-y 4s ease-in-out infinite',
         'ripple-out': 'ripple-out 600ms ease-out forwards',

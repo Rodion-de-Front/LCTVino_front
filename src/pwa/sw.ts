@@ -14,7 +14,7 @@ cleanupOutdatedCaches()
 
 registerRoute(
   new NavigationRoute(createHandlerBoundToURL('index.html'), {
-    denylist: [/^\/api\//, /mockServiceWorker\.js$/],
+    denylist: [/^\/api\//],
   }),
 )
 
@@ -37,9 +37,3 @@ registerRoute(
 self.addEventListener('message', (event) => {
   if (event.data?.type === 'SKIP_WAITING') self.skipWaiting()
 })
-
-// ------------------------------------------------------------------- MSW
-// Loaded last on purpose: Workbox routes get first refusal on static assets,
-// and everything they don't claim (including /api/*) falls through to MSW.
-// Because the mock API is answered inside the page, it keeps working offline.
-importScripts('/mockServiceWorker.js')

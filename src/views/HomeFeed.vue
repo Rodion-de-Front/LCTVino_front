@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import CommentsSheet from '@/components/feed/CommentsSheet.vue'
 import PostCard from '@/components/feed/PostCard.vue'
 import TopBar from '@/components/layout/TopBar.vue'
@@ -10,10 +10,8 @@ import GlassButton from '@/components/ui/GlassButton.vue'
 import { useInView } from '@/composables/useReveal'
 import { usePullToRefresh } from '@/composables/usePullToRefresh'
 import { useFeedStore } from '@/stores/feed'
-import { useUiStore } from '@/stores/ui'
 
 const feed = useFeedStore()
-const ui = useUiStore()
 
 const scroller = ref<HTMLElement | null>(null)
 const sentinel = ref<HTMLElement | null>(null)
@@ -33,11 +31,6 @@ const visiblePosts = computed(() => {
   )
 })
 
-watch(
-  () => feed.error,
-  (message) => message && ui.notify({ type: 'error', title: message }),
-)
-
 onMounted(() => {
   if (!feed.posts.length) feed.loadFeed()
 })
@@ -45,7 +38,7 @@ onMounted(() => {
 
 <template>
   <div class="h-full">
-    <TopBar v-model:query="search" title="LCT Vino" :notifications="3" />
+    <TopBar v-model:query="search" title="Своё Вино" />
 
     <!-- Pull-to-refresh indicator sits behind the list and is revealed as it moves. -->
     <div
@@ -84,7 +77,6 @@ onMounted(() => {
             :index="index"
             @like="feed.likePost"
             @comment="feed.openComments"
-            @save="feed.toggleSave"
           />
         </div>
 

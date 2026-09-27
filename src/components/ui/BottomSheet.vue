@@ -2,8 +2,13 @@
 import { onBeforeUnmount, ref, watch } from 'vue'
 
 const props = withDefaults(
-  defineProps<{ title?: string; fullHeight?: boolean; dismissible?: boolean }>(),
-  { title: '', fullHeight: false, dismissible: true },
+  defineProps<{
+    title?: string
+    fullHeight?: boolean
+    dismissible?: boolean
+    surface?: 'glass' | 'solid'
+  }>(),
+  { title: '', fullHeight: false, dismissible: true, surface: 'glass' },
 )
 
 const open = defineModel<boolean>('open', { default: false })
@@ -64,8 +69,11 @@ onBeforeUnmount(() => {
         v-if="open"
         role="dialog"
         aria-modal="true"
-        class="glass-strong fixed inset-x-0 bottom-0 z-[71] flex flex-col rounded-t-sheet pb-[calc(var(--safe-bottom)+16px)]"
-        :class="fullHeight ? 'top-[8vh]' : 'max-h-[86vh]'"
+        class="fixed inset-x-0 bottom-0 z-[71] flex flex-col rounded-t-sheet pb-[calc(var(--safe-bottom)+16px)]"
+        :class="[
+          surface === 'solid' ? 'bg-cream-soft shadow-glass-lg' : 'glass-strong',
+          fullHeight ? 'top-[8vh]' : 'max-h-[86vh]',
+        ]"
         :style="{
           transform: dragY ? `translateY(${dragY}px)` : undefined,
           transition: dragging ? 'none' : undefined,

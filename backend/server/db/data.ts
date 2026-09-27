@@ -1,5 +1,3 @@
-import type { Comment, Post, Review, User, Wine } from '@/types'
-
 // Portrait crop for catalog cards and the wine page, landscape for feed posts.
 const img = (slug: string) => `/images/wines/${slug}.webp`
 const wide = (slug: string) => `/images/wines/${slug}-wide.webp`
@@ -9,7 +7,7 @@ const ava = (slug: string) => `/images/avatars/${slug}.webp`
 const daysAgo = (d: number, h = 0) =>
   new Date(Date.now() - d * 86_400_000 - h * 3_600_000).toISOString()
 
-export const users: User[] = [
+export const users = [
   {
     id: 'u1',
     name: 'Анна Ковалёва',
@@ -82,7 +80,7 @@ export const users: User[] = [
   },
 ]
 
-export const wines: Wine[] = [
+export const wines = [
   {
     id: 'w1',
     name: 'Каберне Совиньон Резерв',
@@ -372,9 +370,9 @@ const comment = (
   authorId: string,
   text: string,
   days: number,
-): Comment => ({ id, postId, author: brief(authorId), text, createdAt: daysAgo(days) })
+) => ({ id, postId, author: brief(authorId), text, createdAt: daysAgo(days) })
 
-export const posts: Post[] = [
+export const posts = [
   {
     id: 'p1',
     author: brief('u1'),
@@ -595,9 +593,9 @@ const review = (
   rating: number,
   text: string,
   days: number,
-): Review => ({ id, wineId, author: brief(authorId), rating, text, createdAt: daysAgo(days) })
+) => ({ id, wineId, author: brief(authorId), rating, text, createdAt: daysAgo(days) })
 
-export const reviews: Review[] = [
+export const reviews = [
   review('r1', 'w1', 'u1', 5, 'Эталон крымского каберне. Дайте ему подышать полчаса.', 1),
   review('r2', 'w1', 'u4', 4, 'Отлично к мясу, но в молодости слишком плотное.', 4),
   review('r3', 'w1', 'u6', 5, 'Лучшее соотношение цены и характера в своей категории.', 8),

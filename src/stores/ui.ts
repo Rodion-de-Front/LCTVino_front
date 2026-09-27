@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { AppNotification } from '@/types'
 
 type ModalName = 'comments' | 'filters' | 'editProfile' | 'createPost' | 'install' | 'wineSheet'
 
@@ -16,10 +15,8 @@ export const useUiStore = defineStore('ui', () => {
     wineSheet: false,
   })
   const loading = ref(false)
-  const notifications = ref<AppNotification[]>([])
   const animationsEnabled = ref(localStorage.getItem(MOTION_KEY) !== 'off')
   const isOffline = ref(!navigator.onLine)
-  const updateAvailable = ref(false)
   const installPromptReady = ref(false)
   const navDirection = ref<'forward' | 'back'>('forward')
 
@@ -31,16 +28,6 @@ export const useUiStore = defineStore('ui', () => {
   }
   function toggleModal(name: ModalName) {
     modals.value[name] = !modals.value[name]
-  }
-
-  function notify(notification: Omit<AppNotification, 'id'>, ttl = 3200) {
-    const id = `n${Date.now()}${Math.random().toString(36).slice(2, 6)}`
-    notifications.value.push({ ...notification, id })
-    window.setTimeout(() => dismiss(id), ttl)
-    return id
-  }
-  const dismiss = (id: string) => {
-    notifications.value = notifications.value.filter((n) => n.id !== id)
   }
 
   function setAnimationsEnabled(value: boolean) {
@@ -61,17 +48,13 @@ export const useUiStore = defineStore('ui', () => {
   return {
     modals,
     loading,
-    notifications,
     animationsEnabled,
     isOffline,
-    updateAvailable,
     installPromptReady,
     navDirection,
     openModal,
     closeModal,
     toggleModal,
-    notify,
-    dismiss,
     setAnimationsEnabled,
     haptic,
   }

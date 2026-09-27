@@ -36,8 +36,6 @@ export const feedApi = {
     api
       .post<{ likes: number; likedByMe: boolean }>(`/posts/${postId}/like`)
       .then((r) => r.data),
-  save: (postId: string) =>
-    api.post<{ savedByMe: boolean }>(`/posts/${postId}/save`).then((r) => r.data),
   comment: (postId: string, text: string) =>
     api.post<Comment>(`/posts/${postId}/comments`, { text }).then((r) => r.data),
   create: (payload: { wineId: string; text: string; rating: number; tags?: string[] }) =>
@@ -82,7 +80,7 @@ export const catalogApi = {
 export const scanApi = {
   label: (image?: string) =>
     api.post<ScanResult>('/scan/label', { image }).then((r) => r.data),
-  qr: (code?: string) => api.post<ScanResult>('/scan/qr', { code }).then((r) => r.data),
+  qr: (code: string) => api.post<ScanResult>('/scan/qr', { code }).then((r) => r.data),
 }
 
 export const userApi = {
@@ -92,9 +90,15 @@ export const userApi = {
   savePreferences: (preferences: Preferences) =>
     api.patch<AuthUser>('/users/me', { preferences, onboarded: true }).then((r) => r.data),
   cellar: () => api.get<CellarWine[]>('/users/me/wines').then((r) => r.data),
-  addWine: (payload: { wineId: string; favorite?: boolean; rating?: number | null; note?: string }) =>
+  addWine: (payload: {
+    wineId: string
+    favorite?: boolean
+    scanned?: boolean
+    rating?: number | null
+    note?: string
+  }) =>
     api.post<CellarWine>('/users/me/wines', payload).then((r) => r.data),
-  updateWine: (entryId: string, patch: Partial<Pick<CellarWine, 'favorite' | 'rating' | 'note'>>) =>
+  updateWine: (entryId: string, patch: Partial<Pick<CellarWine, 'favorite' | 'scanned' | 'rating' | 'note'>>) =>
     api.patch<CellarWine>(`/users/me/wines/${entryId}`, patch).then((r) => r.data),
   removeWine: (entryId: string) => api.delete(`/users/me/wines/${entryId}`).then(() => undefined),
   profile: (userId: string) => api.get<User>(`/users/${userId}`).then((r) => r.data),

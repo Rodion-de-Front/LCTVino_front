@@ -5,7 +5,6 @@ interface BurstOptions {
   spread?: number
   power?: number
   colors?: string[]
-  shape?: 'confetti' | 'heart'
 }
 
 /**
@@ -15,7 +14,7 @@ interface BurstOptions {
 export function burst(origin: HTMLElement | { x: number; y: number }, options: BurstOptions = {}) {
   if (document.documentElement.classList.contains('motion-off')) return
 
-  const { count = 18, spread = 360, power = 120, colors = WINE_COLORS, shape = 'confetti' } = options
+  const { count = 18, spread = 360, power = 120, colors = WINE_COLORS } = options
 
   let x: number
   let y: number
@@ -35,15 +34,15 @@ export function burst(origin: HTMLElement | { x: number; y: number }, options: B
   for (let i = 0; i < count; i++) {
     const particle = document.createElement('span')
     const color = colors[i % colors.length]
-    const size = shape === 'heart' ? 10 + Math.random() * 8 : 5 + Math.random() * 6
+    const size = 5 + Math.random() * 6
     particle.style.cssText = [
       'position:absolute',
       `left:${x}px`,
       `top:${y}px`,
       `width:${size}px`,
-      `height:${shape === 'confetti' ? size * (0.6 + Math.random()) : size}px`,
+      `height:${size * (0.6 + Math.random())}px`,
       `background:${color}`,
-      shape === 'heart' ? 'clip-path:polygon(50% 100%,0 35%,15% 0,50% 20%,85% 0,100% 35%)' : `border-radius:${Math.random() > 0.5 ? '50%' : '2px'}`,
+      `border-radius:${Math.random() > 0.5 ? '50%' : '2px'}`,
       'will-change:transform,opacity',
     ].join(';')
     layer.appendChild(particle)

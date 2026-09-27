@@ -168,7 +168,7 @@ onMounted(() => {
             <Transition name="pop">
               <ul
                 v-if="sortOpen"
-                class="glass-strong absolute right-0 top-10 z-30 w-52 overflow-hidden rounded-glass p-1"
+                class="glass-menu absolute right-0 top-10 z-30 w-52 overflow-hidden rounded-glass p-1"
               >
                 <li v-for="option in SORTS" :key="option.value">
                   <button
@@ -225,7 +225,7 @@ onMounted(() => {
     </main>
 
     <!-- Filters bottom sheet -->
-    <BottomSheet v-model:open="filtersOpen" title="Фильтры">
+    <BottomSheet v-model:open="filtersOpen" title="Фильтры" surface="solid">
       <div class="space-y-6 py-2">
         <section>
           <p class="mb-2.5 text-footnote font-medium text-ink-muted">Цвет</p>

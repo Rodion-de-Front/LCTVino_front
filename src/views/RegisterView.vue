@@ -17,6 +17,7 @@ const email = ref('')
 const password = ref('')
 const repeat = ref('')
 const touched = ref(false)
+const registered = ref(false)
 
 const nameError = computed(() =>
   touched.value && name.value.trim().length < 2 ? 'Как вас зовут?' : null,
@@ -43,11 +44,18 @@ async function submit() {
       email: email.value.trim(),
       password: password.value,
     })
-    ui.notify({ type: 'success', title: 'Аккаунт создан', description: 'Расскажите о своём вкусе' })
-    router.replace('/onboarding')
+    registered.value = true
   } catch {
     ui.haptic([20, 40, 20])
   }
+}
+
+function openInstallPrompt() {
+  window.dispatchEvent(new Event('vinora:install-request'))
+}
+
+function continueToOnboarding() {
+  router.replace('/onboarding')
 }
 </script>
 
@@ -65,6 +73,7 @@ async function submit() {
       </RouterLink>
 
       <form
+        v-if="!registered"
         v-motion
         :initial="{ opacity: 0, y: 32 }"
         :enter="{ opacity: 1, y: 0, transition: { duration: 480 } }"
@@ -115,7 +124,36 @@ async function submit() {
         </GlassButton>
       </form>
 
-      <p class="mt-6 text-center text-footnote text-ink-muted">
+      <div
+        v-else
+        v-motion
+        :initial="{ opacity: 0, y: 32 }"
+        :enter="{ opacity: 1, y: 0, transition: { duration: 480 } }"
+        class="glass-strong rounded-sheet p-6 text-center"
+      >
+        <div
+          class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-wine-500 to-wine-700 text-white shadow-float"
+        >
+          <AppIcon name="download" :size="24" />
+        </div>
+        <h1 class="mt-4 text-title-lg text-ink">Аккаунт готов</h1>
+        <p class="mt-2 text-footnote text-ink-muted">
+          Установите Своё Вино как приложение: так оно быстрее открывается и удобнее живёт на
+          домашнем экране.
+        </p>
+
+        <div class="mt-5 flex flex-col gap-2">
+          <GlassButton variant="primary" size="lg" block @click="openInstallPrompt">
+            <AppIcon name="download" :size="19" />
+            Скачать приложение
+          </GlassButton>
+          <GlassButton variant="ghost" size="lg" block @click="continueToOnboarding">
+            Продолжить
+          </GlassButton>
+        </div>
+      </div>
+
+      <p v-if="!registered" class="mt-6 text-center text-footnote text-ink-muted">
         Уже с нами?
         <RouterLink to="/auth" class="font-semibold text-wine-600">Войти</RouterLink>
       </p>

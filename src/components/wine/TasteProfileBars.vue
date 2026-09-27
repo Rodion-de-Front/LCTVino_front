@@ -4,13 +4,11 @@ import type { TasteProfile } from '@/types'
 
 const props = defineProps<{ taste: TasteProfile }>()
 
-/** Each axis runs between two opposite characteristics rather than 0→max. */
 const AXES: { key: keyof TasteProfile; label: string; from: string; to: string }[] = [
-  { key: 'body', label: 'Тельность', from: 'Лёгкое', to: 'Плотное' },
-  { key: 'tannins', label: 'Танины', from: 'Мягкие', to: 'Терпкие' },
-  { key: 'acidity', label: 'Кислотность', from: 'Спокойная', to: 'Звонкая' },
+  { key: 'acidity', label: 'Кислотность', from: 'Мягкое', to: 'Кислотное' },
   { key: 'sweetness', label: 'Сладость', from: 'Сухое', to: 'Сладкое' },
-  { key: 'fruitiness', label: 'Фруктовость', from: 'Сдержанное', to: 'Фруктовое' },
+  { key: 'tannins', label: 'Танины', from: 'Бархатистое', to: 'Танинное' },
+  { key: 'body', label: 'Тельность', from: 'Лёгкое', to: 'Плотное' },
 ]
 
 const STEPS = 5
@@ -33,30 +31,28 @@ onMounted(() => requestAnimationFrame(() => (settled.value = true)))
 <template>
   <ul class="space-y-4">
     <li v-for="(row, index) in rows" :key="row.key">
-      <p class="text-caption text-ink-faint">{{ row.label }}</p>
-
-      <div class="mt-1 flex items-center gap-2.5">
+      <div class="grid grid-cols-[minmax(76px,max-content)_minmax(112px,1fr)_minmax(76px,max-content)] items-center gap-4">
         <span
-          class="w-[72px] shrink-0 text-right text-caption transition-colors"
+          class="text-right text-footnote transition-colors"
           :class="row.leans === 'from' ? 'font-semibold text-wine-700' : 'text-ink-muted'"
         >
           {{ row.from }}
         </span>
 
         <div
-          class="relative h-4 flex-1"
+          class="relative h-5 min-w-0"
           role="img"
           :aria-label="`${row.label}: ${row.value} из ${STEPS}, ближе к «${row.leans === 'from' ? row.from : row.to}»`"
         >
-          <span class="absolute inset-x-0 top-1/2 h-[3px] -translate-y-1/2 rounded-pill bg-white/70" />
+          <span class="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-pill bg-white/70" />
           <span
             v-for="step in STEPS"
             :key="step"
-            class="absolute top-1/2 h-[3px] w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-wine-700/25"
+            class="absolute top-1/2 h-1 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-wine-700/25"
             :style="{ left: `${((step - 1) / (STEPS - 1)) * 100}%` }"
           />
           <span
-            class="absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-gradient-to-br from-wine-500 to-wine-700 shadow-float transition-[left] duration-[900ms] ease-ios"
+            class="absolute top-1/2 h-[18px] w-[18px] -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-gradient-to-br from-wine-500 to-wine-700 shadow-float transition-[left] duration-[900ms] ease-ios"
             :style="{
               left: settled ? `${row.percent}%` : '50%',
               transitionDelay: `${index * 90}ms`,
@@ -65,7 +61,7 @@ onMounted(() => requestAnimationFrame(() => (settled.value = true)))
         </div>
 
         <span
-          class="w-[72px] shrink-0 text-caption transition-colors"
+          class="text-footnote transition-colors"
           :class="row.leans === 'to' ? 'font-semibold text-wine-700' : 'text-ink-muted'"
         >
           {{ row.to }}

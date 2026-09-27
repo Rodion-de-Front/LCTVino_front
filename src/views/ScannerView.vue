@@ -9,7 +9,6 @@ import GlassButton from '@/components/ui/GlassButton.vue'
 import LazyImage from '@/components/ui/LazyImage.vue'
 import StarRating from '@/components/ui/StarRating.vue'
 import { scanApi } from '@/api'
-import { errorMessage } from '@/api/client'
 import { useUiStore } from '@/stores/ui'
 import { useUserStore } from '@/stores/user'
 import type { ScanResult } from '@/types'
@@ -19,7 +18,6 @@ const ui = useUiStore()
 const userStore = useUserStore()
 
 const video = ref<HTMLVideoElement | null>(null)
-const mode = ref<'label' | 'qr'>('label')
 const scanning = ref(false)
 const result = ref<ScanResult | null>(null)
 const resultOpen = ref(false)
@@ -29,6 +27,10 @@ const flash = ref(false)
 const { stream, start, stop, isSupported } = useUserMedia({
   constraints: { video: { facingMode: 'environment' }, audio: false },
 })
+
+type BarcodeDetectorCtor = new (options?: { formats?: string[] }) => {
+  detect: (source: CanvasImageSource) => Promise<Array<{ rawValue: string }>>
+}
 
 watch(stream, (value) => {
   if (video.value) video.value.srcObject = value ?? null
@@ -54,20 +56,46 @@ async function capture() {
 
   scanning.value = true
   try {
-    result.value = mode.value === 'qr' ? await scanApi.qr() : await scanApi.label()
+    const frame = captureFrame()
+    const code = frame ? await detectCode(frame.canvas) : ''
+    result.value = code ? await scanApi.qr(code) : await scanApi.label(frame?.dataUrl)
+    await userStore.addWine(result.value.wine.id, { scanned: true })
     resultOpen.value = true
     ui.haptic([10, 20, 10, 20, 30])
   } catch (error) {
-    ui.notify({ type: 'error', title: errorMessage(error, 'Не удалось распознать') })
+    cameraError.value = 'Не удалось распознать'
   } finally {
     scanning.value = false
   }
 }
 
-async function addToCellar() {
+function captureFrame() {
+  const source = video.value
+  if (!source?.videoWidth || !source.videoHeight) return undefined
+  const canvas = document.createElement('canvas')
+  canvas.width = source.videoWidth
+  canvas.height = source.videoHeight
+  canvas.getContext('2d')?.drawImage(source, 0, 0, canvas.width, canvas.height)
+  return { canvas, dataUrl: canvas.toDataURL('image/jpeg', 0.78) }
+}
+
+async function detectCode(canvas: HTMLCanvasElement) {
+  const Detector = (window as unknown as { BarcodeDetector?: BarcodeDetectorCtor }).BarcodeDetector
+  if (!Detector) return ''
+  const detector = new Detector({ formats: ['qr_code', 'ean_13', 'ean_8', 'code_128'] })
+  const [match] = await detector.detect(canvas).catch(() => [])
+  return match?.rawValue.trim() ?? ''
+}
+
+const resultEntry = computed(() =>
+  result.value ? userStore.cellarEntry(result.value.wine.id) : null,
+)
+const resultFavoriteLabel = computed(() => (resultEntry.value?.favorite ? 'В избранном' : 'В избранное'))
+
+async function addResultToFavorites() {
   if (!result.value) return
-  await userStore.addWine(result.value.wine.id)
-  resultOpen.value = false
+  if (resultEntry.value?.favorite) return
+  await userStore.addWine(result.value.wine.id, { favorite: true })
 }
 
 function openWine() {
@@ -80,7 +108,10 @@ const confidenceLabel = computed(() =>
   result.value ? `${Math.round(result.value.confidence * 100)}% совпадение` : '',
 )
 
-onMounted(openCamera)
+onMounted(() => {
+  openCamera()
+  if (!userStore.myWines.length) userStore.loadMyWines()
+})
 onBeforeUnmount(() => stop())
 </script>
 
@@ -107,8 +138,7 @@ onBeforeUnmount(() => stop())
     <!-- Viewfinder -->
     <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
       <div
-        class="relative rounded-[32px] border-2 border-white/70 transition-all duration-500 ease-spring"
-        :class="mode === 'qr' ? 'h-60 w-60' : 'h-[46vh] w-[62vw]'"
+        class="relative h-[46vh] w-[62vw] rounded-[32px] border-2 border-white/70 transition-all duration-500 ease-spring"
       >
         <!-- L-shaped corner accents: each keeps only two of its borders. -->
         <span
@@ -140,7 +170,7 @@ onBeforeUnmount(() => stop())
       </button>
       <div class="glass-dark flex flex-1 items-center justify-center rounded-full px-4 py-2.5">
         <p class="text-footnote">
-          {{ mode === 'qr' ? 'Наведите на QR-код бутылки' : 'Наведите камеру на этикетку' }}
+          Наведите камеру на этикетку
         </p>
       </div>
     </header>
@@ -162,29 +192,7 @@ onBeforeUnmount(() => stop())
     <footer
       class="glass-dark absolute inset-x-3 bottom-[calc(var(--safe-bottom)+12px)] z-20 rounded-sheet px-5 pb-5 pt-4"
     >
-      <div class="mx-auto mb-4 flex w-fit rounded-pill bg-white/10 p-1">
-        <button
-          v-for="option in (['label', 'qr'] as const)"
-          :key="option"
-          type="button"
-          class="rounded-pill px-5 py-1.5 text-footnote transition-all duration-300"
-          :class="mode === option ? 'bg-white/90 text-wine-700' : 'text-white/75'"
-          @click="mode = option"
-        >
-          {{ option === 'label' ? 'Этикетка' : 'QR-код' }}
-        </button>
-      </div>
-
-      <div class="flex items-center justify-between">
-        <button
-          type="button"
-          class="press flex h-12 w-12 items-center justify-center rounded-full bg-white/12 text-white"
-          aria-label="Каталог"
-          @click="router.push('/catalog')"
-        >
-          <AppIcon name="glass" :size="22" />
-        </button>
-
+      <div class="flex items-center justify-center">
         <button
           v-ripple="'rgba(255,255,255,0.5)'"
           type="button"
@@ -193,16 +201,7 @@ onBeforeUnmount(() => stop())
           aria-label="Сфотографировать"
           @click="capture"
         >
-          <AppIcon :name="mode === 'qr' ? 'qr' : 'camera'" :size="30" />
-        </button>
-
-        <button
-          type="button"
-          class="press flex h-12 w-12 items-center justify-center rounded-full bg-white/12 text-white"
-          aria-label="Мои вина"
-          @click="router.push('/my-wines')"
-        >
-          <AppIcon name="bottle" :size="22" />
+          <AppIcon name="camera" :size="30" />
         </button>
       </div>
     </footer>
@@ -254,8 +253,16 @@ onBeforeUnmount(() => stop())
 
       <template #footer>
         <div class="flex gap-2">
-          <GlassButton variant="primary" size="md" block @click="addToCellar">Добавить</GlassButton>
-          <GlassButton variant="gold" size="md" block @click="openWine">В каталог</GlassButton>
+          <GlassButton
+            :variant="resultEntry?.favorite ? 'glass' : 'primary'"
+            size="md"
+            block
+            :disabled="resultEntry?.favorite"
+            @click="addResultToFavorites"
+          >
+            {{ resultFavoriteLabel }}
+          </GlassButton>
+          <GlassButton variant="glass" size="md" block @click="openWine">О вине</GlassButton>
         </div>
       </template>
     </BottomSheet>

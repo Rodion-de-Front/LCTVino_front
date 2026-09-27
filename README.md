@@ -1,63 +1,41 @@
 # Vinora
 
-Прогрессивное веб-приложение — социальная сеть для любителей вина: лента, каталог,
-рейтинги, сканер этикеток и персональный погреб. Бэкенда нет, весь API замокан через MSW.
+Прогрессивное веб-приложение для любителей вина: лента, каталог, рейтинги,
+сканер, профили и персональный погреб.
+
+Фронт не использует MSW или in-memory моки. Все `/api/*` запросы идут в Nuxt API,
+а API хранит состояние в Postgres.
 
 ```bash
 npm install
-npm run dev        # http://localhost:5173
+docker compose up db backend
+npm run dev        # http://localhost:5173, proxy /api -> http://127.0.0.1:3000
 npm run build      # typecheck + production bundle + service worker
-npm run preview    # проверка PWA-сборки (service worker работает только здесь)
+npm run preview
 ```
 
-Демо-доступ: `anna@vinora.ru` / `vinora2026` (кнопка «Заполнить демо-доступом» на экране входа).
+Полный запуск контейнерами:
+
+```bash
+docker compose up --build
+```
+
+Сервисы: Postgres `:5432`, Nuxt API `:3000`, web `:5173`.
+
+Демо-доступ: `anna@vinora.ru` / `vinora2026`. Тот же пароль подходит к сид-аккаунтам
+`dmitry@vinora.ru`, `elena@vinora.ru`, `igor@vinora.ru`, `maria@vinora.ru`,
+`pavel@vinora.ru`, `sofia@vinora.ru`.
+
+При первом старте пустой базы backend создаёт схему и начальные записи: вина,
+пользователей, посты, отзывы, погреб и связи подписок. Повторный старт контейнера
+существующие данные не перезаписывает.
 
 ## Стек
 
-Vue 3 (Composition API, `<script setup>`, TypeScript) · Vite · Vue Router 4 · Pinia ·
-Tailwind CSS · Workbox через `vite-plugin-pwa` · MSW · Axios · `@vueuse/core` · `@vueuse/motion`.
+Vue 3 · Vite · Vue Router · Pinia · Tailwind CSS · Workbox PWA · Axios · Nuxt 3
+API · Postgres.
 
-## Структура
-
-```
-src/
-  api/          axios-клиент с bearer-интерцептором и типизированные эндпоинты
-  assets/       Tailwind-слои, glassmorphism-утилиты, переходы роутера
-  components/   feed/ layout/ loaders/ profile/ pwa/ ui/ wine/
-  composables/  pull-to-refresh, reveal-on-scroll, count-up, confetti, 3D-tilt
-  directives/   v-ripple
-  mocks/        MSW: данные, in-memory БД, обработчики
-  pwa/          sw.ts (Workbox + MSW) и регистрация воркера
-  router/       маршруты и navigation guards
-  stores/       auth, feed, catalog, user, ui
-  views/        экраны приложения
-scripts/
-  generate-assets.mjs   генерирует аватары и PNG-иконки в /public
-```
-
-## Один service worker на две задачи
-
-MSW и Workbox оба претендуют на корневой scope, а браузер отдаёт его только одному
-воркеру. Поэтому вместо двух регистраций собирается один файл `src/pwa/sw.ts`:
-
-1. сначала регистрируются маршруты Workbox — precache оболочки, cache-first для
-   картинок, stale-while-revalidate для шрифтов и стилей;
-2. в конце подключается `importScripts('/mockServiceWorker.js')`.
-
-Порядок важен: Workbox вызывает `respondWith` только для своих маршрутов, всё
-остальное (включая `/api/*`) достаётся MSW. Клиент адаптирует существующую
-регистрацию через опцию `findWorker`, поэтому MSW не ставит собственный воркер.
-
-Побочный эффект такой схемы — офлайн работает без кэширования ответов API: моки
-резолвятся в самой странице, а состояние (сессии, погреб, посты) переживает
-перезагрузку в `localStorage`.
-
-В dev-режиме `/sw.js` не собирается: там MSW регистрирует свой воркер, а Workbox
-не участвует.
-
-## Замоканный API
-
-12 вин, 12 постов с комментариями, 7 пользователей, 24 отзыва, погреб из 6 бутылок.
+## API
 
 | Метод | Путь |
 | --- | --- |
@@ -76,41 +54,6 @@ MSW и Workbox оба претендуют на корневой scope, а бр�
 | GET | `/api/users/:id`, `/api/users/:id/posts`, `/api/users/:id/reviews` |
 | POST DELETE | `/api/users/:id/follow` |
 
-Сканер открывает камеру через `useUserMedia` и возвращает случайное вино из базы —
-распознавания этикеток нет по условию задачи.
-
-Каждое вино описано цветом (`red | white | rose | orange`) и категорией
-(`still | sparkling | fortified`) — это независимые оси, поэтому розовое может
-быть и тихим, и игристым. `/api/wines/facets` отдаёт списки регионов, сортов,
-производителей и гастросочетаний для фильтров каталога, чтобы они не были
-зашиты в UI.
-
-Сбросить моки к исходному состоянию: `localStorage.removeItem('vinora:db:v3')`.
-
-## Картинки
-
-Бутылки — настоящие фотографии под лицензией CC0 (StockSnap и Rawpixel, найдены
-через Openverse). Каждое вино лежит в `public/images/wines/` в двух кадрах:
-`<slug>.webp` — портрет 900×1200 для карточек каталога, погреба и шапки страницы
-вина, `<slug>-wide.webp` — 1200×900 для постов в ленте. Так ни один экран не
-режет бутылку по краю. Источник каждого снимка записан в
-`scripts/wine-photo-credits.json`. Все 24 файла весят ~1,9 МБ и попадают в
-precache, чтобы каталог не пустовал офлайн.
-
-Аватары семи демо-пользователей — тоже CC0-портреты, кадрированные по лицу до
-квадрата 256×256 (`scripts/avatar-photo-credits.json`). У новых регистраций
-фото нет, им достаётся нарисованная заглушка `guest.svg`.
-
-Заглушку и PNG-иконки PWA генерирует `scripts/generate-assets.mjs` (минимальный
-энкодер PNG на `zlib`). Ассеты закоммичены; перегенерировать —
-`node scripts/generate-assets.mjs`.
-
-## Анимации
-
-Переходы между экранами выбираются по `meta.depth` маршрута: вперёд — slide-left,
-назад — slide-right, модальные экраны — fade. Отключить всю моторику можно через
-`uiStore.setAnimationsEnabled(false)`; `prefers-reduced-motion` учитывается автоматически.
-
-Кастомные лоудеры: `WineFillLoader` (бокал наполняется вином с волной),
-`SpinningBottleLoader` (3D-бутылка из шести срезов), `WineDropsLoader` (капли с bounce),
-`BubblesLoader` (пузырьки игристого).
+Сканер больше не возвращает случайное вино. `/api/scan/qr` и `/api/scan/label`
+ищут конкретный идентификатор или текстовую метку в базе и возвращают ошибку,
+если совпадения нет.

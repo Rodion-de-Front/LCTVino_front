@@ -30,7 +30,6 @@ async function submit() {
   if (!valid.value) return
   try {
     const user = await auth.login(email.value.trim(), password.value)
-    ui.notify({ type: 'success', title: `С возвращением, ${user.name.split(' ')[0]}` })
     const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : null
     router.replace(user.onboarded ? redirect ?? '/' : '/onboarding')
   } catch {

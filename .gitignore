@@ -15,6 +15,10 @@ dist-ssr
 *.sln
 *.sw?
 
+# Nuxt backend
+.nuxt
+.output
+
 # Logs
 logs
 *.log

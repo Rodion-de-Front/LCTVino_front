@@ -27,7 +27,6 @@ const user = computed(() => userStore.viewedUser)
 const tabs = computed(() => [
   { value: 'posts', label: 'Посты', count: userStore.viewedPosts.length },
   { value: 'reviews', label: 'Отзывы', count: userStore.viewedReviews.length },
-  { value: 'favorites', label: 'Избранное', count: 0 },
 ])
 
 async function toggleFollow() {
@@ -127,7 +126,6 @@ onUnmounted(() => untrack())
               :index="index"
               @like="feed.likePost"
               @comment="feed.openComments"
-              @save="feed.toggleSave"
             />
             <p
               v-if="!userStore.viewedPosts.length"
@@ -162,9 +160,6 @@ onUnmounted(() => untrack())
             </p>
           </ul>
 
-          <p v-else key="favorites" class="glass rounded-sheet py-10 text-center text-footnote text-ink-muted">
-            Избранное этого пользователя скрыто
-          </p>
         </Transition>
       </div>
     </main>

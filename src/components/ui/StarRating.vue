@@ -49,7 +49,7 @@ const fillFor = (index: number) => Math.min(1, Math.max(0, props.modelValue - in
       :class="[
         editable && 'active:scale-90',
         bouncing === index && 'scale-125',
-        animateIn && 'animate-[heart-pop_520ms_cubic-bezier(0.34,1.56,0.64,1)_both]',
+        animateIn && 'animate-[pop-bounce_520ms_cubic-bezier(0.34,1.56,0.64,1)_both]',
       ]"
       :style="animateIn ? { animationDelay: `${index * 70}ms` } : undefined"
       @click="pick(index)"

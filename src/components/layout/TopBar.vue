@@ -4,9 +4,8 @@ import { useRouter } from 'vue-router'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import BrandLogo from '@/components/layout/BrandLogo.vue'
 
-withDefaults(defineProps<{ title?: string; notifications?: number; searchable?: boolean }>(), {
-  title: 'LCT Vino',
-  notifications: 0,
+withDefaults(defineProps<{ title?: string; searchable?: boolean }>(), {
+  title: 'Своё Вино',
   searchable: true,
 })
 
@@ -14,7 +13,6 @@ const query = defineModel<string>('query', { default: '' })
 const router = useRouter()
 const searchOpen = ref(false)
 const input = ref<HTMLInputElement | null>(null)
-const bellRinging = ref(false)
 
 async function toggleSearch() {
   searchOpen.value = !searchOpen.value
@@ -26,10 +24,6 @@ async function toggleSearch() {
   }
 }
 
-function ringBell() {
-  bellRinging.value = true
-  window.setTimeout(() => (bellRinging.value = false), 700)
-}
 </script>
 
 <template>
@@ -63,46 +57,6 @@ function ringBell() {
         <AppIcon :name="searchOpen ? 'close' : 'search'" :size="21" />
       </button>
 
-      <button
-        type="button"
-        class="press relative flex h-10 w-10 items-center justify-center rounded-full text-ink-muted hover:bg-white/50"
-        aria-label="Уведомления"
-        @click="ringBell"
-      >
-        <AppIcon name="bell" :size="21" :class="bellRinging && 'animate-bell'" />
-        <span
-          v-if="notifications > 0"
-          class="absolute right-1.5 top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-pill bg-gradient-to-br from-wine-500 to-wine-700 px-1 text-[10px] font-semibold text-white shadow-float"
-          :class="bellRinging && 'animate-heart-pop'"
-        >
-          {{ notifications > 9 ? '9+' : notifications }}
-        </span>
-      </button>
     </div>
   </header>
 </template>
-
-<style scoped>
-@keyframes bell-swing {
-  0%,
-  100% {
-    transform: rotate(0);
-  }
-  20% {
-    transform: rotate(14deg);
-  }
-  40% {
-    transform: rotate(-11deg);
-  }
-  60% {
-    transform: rotate(7deg);
-  }
-  80% {
-    transform: rotate(-4deg);
-  }
-}
-.animate-bell {
-  animation: bell-swing 700ms ease-in-out;
-  transform-origin: top center;
-}
-</style>

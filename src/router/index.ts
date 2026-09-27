@@ -113,5 +113,5 @@ router.beforeEach((to, from) => {
 })
 
 router.afterEach((to) => {
-  document.title = to.meta.title ? `${to.meta.title} · LCT Vino` : 'LCT Vino'
+  document.title = to.meta.title ? `${to.meta.title} · Своё Вино` : 'Своё Вино'
 })

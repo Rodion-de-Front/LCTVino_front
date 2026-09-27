@@ -71,7 +71,7 @@ const price = computed(() => `${props.wine.price.toLocaleString('ru-RU')} ₽`)
           name="heart"
           :size="18"
           :filled="favorite"
-          :class="favorite && 'animate-heart-pop'"
+          :class="favorite && 'animate-pop-bounce'"
         />
       </button>
     </div>

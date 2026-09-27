@@ -74,7 +74,7 @@ export const useFeedStore = defineStore('feed', () => {
   async function likePost(postId: string) {
     const copies = copiesOf(postId)
     if (!copies.length) return
-    // Optimistic: the heart animation must not wait for the round-trip.
+    // Optimistic: the like animation must not wait for the round-trip.
     const previous = { likes: copies[0].likes, likedByMe: copies[0].likedByMe }
     const liked = !previous.likedByMe
     copies.forEach((post) => {
@@ -90,24 +90,6 @@ export const useFeedStore = defineStore('feed', () => {
       })
     } catch {
       copies.forEach((post) => Object.assign(post, previous))
-      ui.notify({ type: 'error', title: 'Лайк не сохранился' })
-    }
-  }
-
-  async function toggleSave(postId: string) {
-    const copies = copiesOf(postId)
-    if (!copies.length) return
-    const saved = !copies[0].savedByMe
-    copies.forEach((post) => (post.savedByMe = saved))
-    try {
-      const data = await feedApi.save(postId)
-      copies.forEach((post) => (post.savedByMe = data.savedByMe))
-      ui.notify({
-        type: 'success',
-        title: data.savedByMe ? 'Сохранено' : 'Удалено из сохранённых',
-      })
-    } catch {
-      copies.forEach((post) => (post.savedByMe = !saved))
     }
   }
 
@@ -120,8 +102,7 @@ export const useFeedStore = defineStore('feed', () => {
         post.comments.push(comment)
         post.commentsCount = post.comments.length
       })
-    } catch (e) {
-      ui.notify({ type: 'error', title: errorMessage(e, 'Комментарий не отправлен') })
+    } catch {
     }
   }
 
@@ -133,7 +114,6 @@ export const useFeedStore = defineStore('feed', () => {
   }) {
     const post = await feedApi.create(payload)
     posts.value.unshift(post)
-    ui.notify({ type: 'success', title: 'Пост опубликован' })
     return post
   }
 
@@ -160,7 +140,6 @@ export const useFeedStore = defineStore('feed', () => {
     loadMore,
     trackPosts,
     likePost,
-    toggleSave,
     addComment,
     createPost,
     openComments,

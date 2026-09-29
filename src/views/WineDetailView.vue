@@ -20,6 +20,7 @@ const userStore = useUserStore()
 const scroller = ref<HTMLElement | null>(null)
 const scrollY = ref(0)
 const reviewOpen = ref(false)
+const photoOpen = ref(false)
 const myRating = ref(4)
 const myNote = ref('')
 const saving = ref(false)
@@ -126,10 +127,24 @@ onMounted(() => {
             ratio="auto"
             rounded="rounded-none"
             eager
+            fit="contain"
             class="!h-[52vh]"
           />
         </div>
         <div class="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-cream-soft to-transparent" />
+
+        <!-- Снимок целиком. Даже вписанная по высоте бутылка в 52vh мелкая, а
+             этикетку иногда хочется прочитать — особенно когда сканер
+             предложил несколько похожих вин и надо выбрать глазами. -->
+        <button
+          v-if="wine.image"
+          type="button"
+          class="press absolute right-3 top-[calc(var(--safe-top)+56px)] flex h-10 w-10 items-center justify-center rounded-full bg-wine-900/40 text-white backdrop-blur-md"
+          aria-label="Открыть фотографию целиком"
+          @click="photoOpen = true"
+        >
+          <AppIcon name="search" :size="18" />
+        </button>
       </div>
 
       <div class="relative -mt-16 space-y-4 px-4">
@@ -155,11 +170,13 @@ onMounted(() => {
             </button>
           </div>
 
-          <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+          <!-- Цены нет в каталоге, поэтому её нет и здесь. Оценки есть у 901
+               вина из 2103: строка появляется только когда есть что показать,
+               иначе пустые звёзды читаются как «оценили на ноль». -->
+          <div v-if="wine.rating > 0" class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
             <StarRating :model-value="wine.rating" :size="18" show-value animate-in />
-            <span class="text-caption text-ink-muted">{{ wine.ratingsCount }} оценок</span>
-            <span class="ml-auto text-title font-semibold text-wine-600">
-              {{ wine.price.toLocaleString('ru-RU') }} ₽
+            <span v-if="wine.ratingsCount > 0" class="text-caption text-ink-muted">
+              {{ wine.ratingsCount }} оценок
             </span>
           </div>
 
@@ -201,8 +218,14 @@ onMounted(() => {
           :enter="{ opacity: 1, y: 0, transition: { duration: 460, delay: 160 } }"
           class="glass rounded-sheet p-5"
         >
-          <h2 class="mb-4 text-title text-ink">Вкусовой профиль</h2>
-          <TasteProfileBars :taste="wine.taste" />
+          <!-- Профиля вкуса в каталоге нет ни у одной позиции. Заголовок над
+               пятью нулевыми полосками выглядит как «вино без вкуса», поэтому
+               блок появляется только когда есть что показать. Сочетания с
+               едой ниже — есть у 2037 из 2103. -->
+          <template v-if="wine.taste && Object.keys(wine.taste).length">
+            <h2 class="mb-4 text-title text-ink">Вкусовой профиль</h2>
+            <TasteProfileBars :taste="wine.taste" />
+          </template>
 
           <div class="mt-5">
             <p class="mb-2 text-footnote text-ink-muted">Сочетается с</p>
@@ -274,12 +297,15 @@ onMounted(() => {
               class="press glass w-[150px] overflow-hidden rounded-glass p-2 text-left"
               @click="router.push(`/wine/${similar.id}`)"
             >
-              <LazyImage :src="similar.image" :alt="similar.name" ratio="3 / 4" rounded="rounded-[14px]" />
+              <LazyImage
+                :src="similar.image"
+                :alt="similar.name"
+                ratio="3 / 4"
+                rounded="rounded-[14px]"
+                fit="contain"
+              />
               <p class="mt-2 truncate text-caption font-semibold text-ink">{{ similar.name }}</p>
-              <div class="mt-1 flex items-center justify-between">
-                <StarRating :model-value="similar.rating" :size="11" />
-                <span class="text-caption text-wine-600">{{ similar.price.toLocaleString('ru-RU') }} ₽</span>
-              </div>
+              <p class="mt-0.5 truncate text-caption text-ink-muted">{{ similar.producer }}</p>
             </button>
           </div>
         </section>
@@ -299,5 +325,37 @@ onMounted(() => {
         </GlassButton>
       </template>
     </BottomSheet>
+
+    <!-- Просмотр фотографии целиком. Закрывается тапом куда угодно и Esc:
+         это один снимок, а не галерея, и любой другой способ выхода был бы
+         лишним элементом поверх картинки. -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div
+          v-if="photoOpen && wine"
+          class="fixed inset-0 z-[60] flex items-center justify-center bg-ink/90 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          :aria-label="`Фотография: ${wine.name}`"
+          tabindex="-1"
+          @click="photoOpen = false"
+          @keydown.esc="photoOpen = false"
+        >
+          <img
+            :src="wine.image"
+            :alt="wine.name"
+            class="max-h-full max-w-full object-contain"
+          />
+          <button
+            type="button"
+            class="press absolute right-4 top-[calc(var(--safe-top)+12px)] flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-white"
+            aria-label="Закрыть"
+            @click.stop="photoOpen = false"
+          >
+            <AppIcon name="close" :size="20" />
+          </button>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>

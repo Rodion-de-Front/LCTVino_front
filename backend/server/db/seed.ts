@@ -1,6 +1,25 @@
 import postgres from 'postgres'
 import { hashPassword } from '../utils/password'
-import { posts, reviews, users, wines } from './data'
+import { posts, reviews, users } from './data'
+import catalogWines from './catalog.json'
+import demoWineMap from './demo-wine-map.json'
+
+// Каталог настоящий: 2103 вина, выгруженные из данных организаторов вместе с
+// фотографиями бутылок (scripts/export_catalog_to_web.py в репозитории
+// сканера). Демонстрационных вин из data.ts больше нет: придуманные цены и
+// профили вкуса плохо смотрятся в продукте, смысл которого — настоящий
+// каталог.
+//
+// id вина — это slug каталога, тот самый, который возвращает матчер. Это
+// существенно: ответ сканера ложится в карточку без промежуточной таблицы
+// соответствий.
+const wines = catalogWines as Array<Record<string, any>>
+
+// Посты, отзывы и полка ссылались на w1..w12. Тех записей больше нет, поэтому
+// ссылки переводятся на реальные вина того же цвета и сорта; соответствия
+// подобраны один раз и лежат в demo-wine-map.json.
+const realId = (demoId: string) => (demoWineMap as Record<string, string>)[demoId] ?? demoId
+const wineById = new Map(wines.map((w) => [w.id, w]))
 
 const TEXT_ARRAY = 1009
 
@@ -93,8 +112,8 @@ export async function seedIfEmpty(sql: ReturnType<typeof postgres>) {
         ) VALUES (
           ${post.id},
           ${post.author.id},
-          ${post.wineId},
-          ${post.wineName},
+          ${realId(post.wineId)},
+          ${wineById.get(realId(post.wineId))?.name ?? post.wineName},
           ${post.image},
           ${post.text},
           ${post.rating},
@@ -128,7 +147,7 @@ export async function seedIfEmpty(sql: ReturnType<typeof postgres>) {
         INSERT INTO reviews (id, wine_id, author_id, rating, text, created_at)
         VALUES (
           ${review.id},
-          ${review.wineId},
+          ${realId(review.wineId)},
           ${review.author.id},
           ${review.rating},
           ${review.text},
@@ -143,7 +162,7 @@ export async function seedIfEmpty(sql: ReturnType<typeof postgres>) {
         VALUES (
           ${entry.id},
           'u1',
-          ${entry.wineId},
+          ${realId(entry.wineId)},
           ${entry.favorite},
           ${entry.rating},
           ${entry.note},

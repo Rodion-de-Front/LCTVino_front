@@ -1,9 +1,23 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 
+// fit="contain" — для бутылок. Снимки каталога 260x1000, соотношение 0.26, а
+// карточка просит 3/4 = 0.75: при object-cover от бутылки остаётся средняя
+// четверть, без горлышка и без низа этикетки. Вино узнают по силуэту и по
+// этикетке целиком, обрезать их нельзя.
+//
+// По умолчанию остаётся cover: фотографии ленты и аватары должны заполнять
+// рамку, и менять их поведение незачем.
 const props = withDefaults(
-  defineProps<{ src: string; alt?: string; ratio?: string; rounded?: string; eager?: boolean }>(),
-  { alt: '', ratio: '4 / 5', rounded: 'rounded-glass', eager: false },
+  defineProps<{
+    src: string
+    alt?: string
+    ratio?: string
+    rounded?: string
+    eager?: boolean
+    fit?: 'cover' | 'contain'
+  }>(),
+  { alt: '', ratio: '4 / 5', rounded: 'rounded-glass', eager: false, fit: 'cover' },
 )
 
 const loaded = ref(false)
@@ -52,8 +66,8 @@ onMounted(() => {
       :alt="alt"
       :loading="eager ? 'eager' : 'lazy'"
       decoding="async"
-      class="h-full w-full object-cover"
-      :class="loaded ? 'blur-up-done' : 'blur-up'"
+      class="h-full w-full"
+      :class="[fit === 'contain' ? 'object-contain' : 'object-cover', loaded ? 'blur-up-done' : 'blur-up']"
       @load="loaded = true"
       @error="loaded = true"
     />

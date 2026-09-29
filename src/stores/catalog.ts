@@ -47,9 +47,12 @@ export const useCatalogStore = defineStore('catalog', () => {
       f.grapes.length +
       f.producers.length +
       f.pairings.length +
-      (f.minRating > 0 ? 1 : 0) +
-      (f.awardedOnly ? 1 : 0) +
-      (f.maxPrice < MAX_PRICE ? 1 : 0)
+      (f.minRating > 0 ? 1 : 0)
+      // awardedOnly и maxPrice не считаются: наград и цен в каталоге нет ни
+      // у одной позиции, элементы управления убраны из интерфейса. Сами поля
+      // остаются, чтобы не ломать сохранённое состояние и контракт API, но
+      // показывать счётчик фильтров, которых пользователь не выставлял, —
+      // значит врать о состоянии экрана.
     )
   })
 

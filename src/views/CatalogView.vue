@@ -9,7 +9,7 @@ import GlassButton from '@/components/ui/GlassButton.vue'
 import SearchableChecklist from '@/components/ui/SearchableChecklist.vue'
 import WineCard from '@/components/wine/WineCard.vue'
 import { useInView } from '@/composables/useReveal'
-import { MAX_PRICE, useCatalogStore } from '@/stores/catalog'
+import { useCatalogStore } from '@/stores/catalog'
 import { useUiStore } from '@/stores/ui'
 import { useUserStore } from '@/stores/user'
 import type { CatalogSort, Sweetness, Wine, WineCategory, WineColor } from '@/types'
@@ -40,10 +40,12 @@ const SWEETNESS: { value: Sweetness; label: string }[] = [
   { value: 'semi-sweet', label: 'Полусладкое' },
   { value: 'sweet', label: 'Сладкое' },
 ]
+// Сортировки по цене убраны: цены нет ни у одной из 2103 позиций каталога, а
+// пункт меню, который ничего не меняет, хуже отсутствующего пункта.
+// «Новый урожай» оставлен: год указан у 116 вин, они честно поднимаются
+// наверх, остальные уходят вниз.
 const SORTS: { value: CatalogSort; label: string }[] = [
   { value: 'rating', label: 'По рейтингу' },
-  { value: 'price-asc', label: 'Сначала дешевле' },
-  { value: 'price-desc', label: 'Сначала дороже' },
   { value: 'newest', label: 'Новый урожай' },
   { value: 'name', label: 'По названию' },
 ]
@@ -346,38 +348,13 @@ onMounted(() => {
             class="w-full accent-wine-600"
           />
 
-          <button
-            type="button"
-            class="press mt-3 flex w-full items-center gap-2.5 rounded-glass border px-3.5 py-2.5 text-left text-footnote transition-all duration-300"
-            :class="
-              catalog.filters.awardedOnly
-                ? 'border-transparent bg-gradient-to-br from-wine-500 to-wine-700 text-white shadow-float'
-                : 'border-white/70 bg-white/50 text-ink'
-            "
-            :aria-pressed="catalog.filters.awardedOnly"
-            @click="catalog.filters.awardedOnly = !catalog.filters.awardedOnly"
-          >
-            <AppIcon name="sparkles" :size="18" />
-            Только отмеченные наградами
-          </button>
         </section>
 
-        <section>
-          <div class="mb-2 flex items-center justify-between">
-            <p class="text-footnote font-medium text-ink-muted">Цена до</p>
-            <span class="text-footnote font-semibold text-wine-600">
-              {{ catalog.filters.maxPrice.toLocaleString('ru-RU') }} ₽
-            </span>
-          </div>
-          <input
-            v-model.number="catalog.filters.maxPrice"
-            type="range"
-            min="1000"
-            :max="MAX_PRICE"
-            step="100"
-            class="w-full accent-wine-600"
-          />
-        </section>
+        <!-- Фильтр «только отмеченные наградами» и ползунок цены убраны:
+             ни наград, ни цен в каталоге нет ни у одной позиции. Первый
+             всегда возвращал бы пустой список, второй не влиял бы ни на что.
+             Фильтр, который лжёт о том, что он делает, хуже его отсутствия;
+             перечень недостающих полей — в CATALOG_FEEDBACK.md сканера. -->
       </div>
 
       <template #footer>

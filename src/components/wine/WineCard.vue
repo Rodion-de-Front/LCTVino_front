@@ -27,7 +27,13 @@ const CATEGORY_LABELS: Record<string, string> = {
 const typeLabel = computed(
   () => CATEGORY_LABELS[props.wine.category] ?? COLOR_LABELS[props.wine.color] ?? props.wine.color,
 )
-const price = computed(() => `${props.wine.price.toLocaleString('ru-RU')} ₽`)
+// Цены на карточке нет: её нет в каталоге ни у одной из 2103 позиций, и
+// подставлять сюда нечего. Место занимает производитель — он есть всегда и
+// для выбора вина полезнее.
+//
+// Рейтинг есть у 901 записи из 2103; пустые звёзды читаются как «оценили на
+// ноль», поэтому показываем их только когда оценка действительно есть.
+const hasRating = computed(() => props.wine.rating > 0)
 </script>
 
 <template>
@@ -53,7 +59,13 @@ const price = computed(() => `${props.wine.price.toLocaleString('ru-RU')} ₽`)
     />
 
     <div class="relative">
-      <LazyImage :src="wine.image" :alt="wine.name" ratio="3 / 4" rounded="rounded-[16px]" />
+      <LazyImage
+        :src="wine.image"
+        :alt="wine.name"
+        ratio="3 / 4"
+        rounded="rounded-[16px]"
+        fit="contain"
+      />
       <span
         class="absolute left-2 top-2 rounded-pill bg-wine-900/45 px-2 py-0.5 text-caption text-white backdrop-blur-md"
       >
@@ -79,13 +91,8 @@ const price = computed(() => `${props.wine.price.toLocaleString('ru-RU')} ₽`)
     <div class="relative mt-2.5 px-1 pb-1">
       <h3 class="truncate text-footnote font-semibold text-ink">{{ wine.name }}</h3>
       <p class="truncate text-caption text-ink-muted">{{ wine.producer }} · {{ wine.region }}</p>
-      <!-- Stars and price share a line when the card is wide enough,
-           otherwise the price drops below instead of being clipped. -->
-      <div class="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
+      <div v-if="hasRating" class="mt-2 flex items-center">
         <StarRating :model-value="wine.rating" :size="12" show-value />
-        <span class="ml-auto whitespace-nowrap text-footnote font-semibold text-wine-600">
-          {{ price }}
-        </span>
       </div>
     </div>
   </article>

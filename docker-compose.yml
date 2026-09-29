@@ -5,8 +5,10 @@ services:
       POSTGRES_USER: vinora
       POSTGRES_PASSWORD: vinora
       POSTGRES_DB: vinora
+    # Только loopback. На боксе без файрвола «5432:5432» означает postgres,
+    # открытый в интернет с паролем vinora/vinora.
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - vinora-pg:/var/lib/postgresql/data
     healthcheck:
@@ -22,8 +24,17 @@ services:
       DATABASE_URL: postgres://vinora:vinora@db:5432/vinora
       HOST: 0.0.0.0
       PORT: "3000"
+      # Сервис сопоставления живёт отдельным контейнером: ему нужны torch,
+      # веса SigLIP2 и индекс эмбеддингов. Здесь только его адрес. Пусто —
+      # сканер деградирует и честно об этом сообщает, остальное приложение
+      # работает как обычно. Значения берутся из .env, см. .env.example.
+      MATCHER_URL: ${MATCHER_URL:-}
+      MATCHER_PATH: ${MATCHER_PATH:-/v1/predict}
+      MATCHER_TIMEOUT_MS: ${MATCHER_TIMEOUT_MS:-15000}
+    # Наружу бэкенд не смотрит: снаружи к нему ходят через traefik, который
+    # проксирует /api на этот же порт по loopback.
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     depends_on:
       db:
         condition: service_healthy
@@ -33,7 +44,7 @@ services:
       context: .
       dockerfile: Dockerfile.web
     ports:
-      - "5173:80"
+      - "127.0.0.1:5173:80"
     depends_on:
       - backend
 
